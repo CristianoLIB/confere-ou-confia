@@ -1,0 +1,37 @@
+Olá! Boas-vindas a mais uma Pílula de IA do LIB. Vamos começar com uma cena que talvez você reconheça.
+
+Você está montando uma apresentação pro cliente e falta um número. Quanto uma empresa costuma ganhar de produtividade com melhoria contínua? Você pergunta pra IA. Em dois segundos vem a resposta. Um percentual redondo, o nome de um estudo, a instituição, o ano. Bonito demais. Você copia pro slide. Três semanas depois, na apresentação, alguém pergunta de onde veio esse dado. E você descobre que o estudo não existe.
+
+Isso não é hipótese. Em outubro de dois mil e vinte e cinco, a Deloitte Austrália entregou ao governo um relatório de mais de quatrocentos mil dólares australianos. As citações tinham sido inventadas pela IA. A consultoria teve que devolver parte do pagamento. Uma das maiores do mundo, num entregável pago e revisado. Não foi falta de competência. Foi confiar numa resposta que parecia certa, sem conferir.
+
+E a raiz disso não é a ferramenta ser ruim. É a gente usar ela achando que é um Google mais esperto. Não é.
+
+Pensa assim. O Google funciona como um bibliotecário. Você pergunta, ele vasculha um acervo gigantesco e te aponta onde está a resposta. O link, a página, a fonte. Ele não escreve nada novo. Ele te leva até o que já existe.
+
+Uma IA generativa, como o ChatGPT ou o Gemini, é mais parecida com um redator. Ela não abre um arquivo com a resposta pronta. Ela escreve um texto novo, prevendo palavra por palavra qual é a sequência mais provável, com base em tudo que aprendeu. É impressionante. Mas é escrita. Não é busca.
+
+E quando o assunto é um dado específico, um número, uma data, o nome de um estudo, escrever a sequência mais provável e dizer a verdade não são a mesma coisa. Na maior parte das vezes, coincidem. Quando não coincidem, o texto continua saindo perfeito. Esse é o ponto.
+
+Na prática, isso muda a escolha da ferramenta. Precisa de uma fonte primária? De um dado que muda o tempo todo? De um link que comprove algo pro cliente? Um prazo legal, uma norma, um número oficial? Isso é busca. Vá ao site oficial, à publicação original.
+
+Precisa organizar, resumir, comparar, reescrever, adaptar, gerar uma primeira versão? Um relatório de quarenta páginas que precisa virar meia página? Um e-mail difícil de escrever? Um texto técnico que precisa ser entendido no chão de fábrica? Isso é redação. É aqui que a IA é excelente, e é aqui que ela economiza horas de verdade.
+
+E repara numa coisa. Nesses casos, o conteúdo é seu. Você entrega o material e pede pra ela trabalhar em cima dele. Por isso o risco cai tanto. Ela não precisa inventar nada. Só reorganizar o que você deu.
+
+Quando a IA inventa uma informação que não existe, isso tem nome. Alucinação. Não é desonestidade da ferramenta. É consequência de como ela funciona. O trabalho dela é completar o padrão de forma coerente, não verificar se cada fato é verdadeiro.
+
+Agora, uma nuance importante. Hoje o ChatGPT e o Gemini fazem busca em tempo real, e dá pra perceber quando isso acontece. Aparecem links, aparecem citações, ou a ferramenta avisa que pesquisou na web. Nesses casos, a resposta tende a ser bem mais confiável, porque deixou de ser só redação. A IA pode estar certa. E frequentemente está.
+
+O que não muda é quem decide se aquilo vai pro cliente. Você. Se veio com link, abra o link. Se não veio link, e é um número, uma data ou uma citação, trate como rascunho até confirmar.
+
+Duas situações pra fixar. O cliente te mandou um relatório de sessenta páginas e você tem reunião em uma hora. Colar esse relatório na IA e pedir os pontos principais é uso excelente, e risco baixo, porque o conteúdo é seu. Agora, citar uma estatística ou um estudo numa proposta é risco máximo. Nome de autor, ano e instituição são fáceis de compor de um jeito plausível. Use a IA pra te dar pistas de onde procurar. E abra a fonte original antes de colocar no material.
+
+E aqui está o erro mais comum de todos. Não é usar a IA errado. É tratar a resposta dela como se já fosse um resultado de busca verificado.
+
+A conferência não é um passo extra pra quem tem tempo sobrando. É o padrão mínimo de qualidade do LIB, principalmente quando aquilo vai pra mão do cliente. E repara na armadilha. O que engana não é o erro. É o tom. A resposta errada chega com a mesma fluência e a mesma segurança da resposta certa. Não existe um aviso na tela dizendo que ela errou. Por isso a checagem não pode depender de você desconfiar. Tem que ser rotina.
+
+Resumindo. O Google busca. A IA redige. Ela pode pesquisar em tempo real e citar fonte, e quando faz isso, tende a acertar. Mas a régua não muda. Confiar é ótimo. Conferir é obrigatório.
+
+Volta um segundo à cena do começo. O problema ali não foi a IA ter inventado o estudo. Foi ninguém ter aberto a fonte antes daquele slide chegar no cliente. É só esse passo que separa as duas histórias possíveis. E é um passo curto. Trinta segundos abrindo um link.
+
+Então use a IA sem medo. Ela vai te economizar horas de verdade e vai te deixar entregar mais, e melhor. Só não deixe ela assinar no seu lugar. Quem assina é você.
