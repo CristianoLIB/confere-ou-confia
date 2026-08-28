@@ -1,0 +1,108 @@
+version: "3.7"
+
+## Stack Gente Lean (entrada pública + bastidores + api do chat) — Docker
+## Swarm + Traefik. gl_entrada/gl_admin rodam a MESMA imagem do apps/web;
+## o que muda é APP_SCOPE, lido em runtime por apps/web/src/middleware.ts.
+## gl_api é outra imagem (apps/api, NestJS) — recebe o chat do YouTube e
+## serve /curadoria e /backstage direto do navegador (por isso CORS + rota
+## Traefik própria). Banco = Supabase Cloud, mesmo projeto pras três.
+##
+## Antes de atualizar esta stack no Portainer, preencha em "Environment
+## variables" (embaixo do editor, NÃO no YAML): SUPABASE_URL,
+## SUPABASE_SERVICE_ROLE_KEY, YOUTUBE_API_KEY, YOUTUBE_BOT_CLIENT_ID,
+## YOUTUBE_BOT_CLIENT_SECRET, YOUTUBE_BOT_REFRESH_TOKEN — os valores reais
+## ficam só ali, nunca neste arquivo.
+
+services:
+
+  gl_entrada:
+    image: ghcr.io/cristianolib/gente-lean-web:latest
+    networks:
+      - LIBNet
+    environment:
+      - APP_SCOPE=public
+      - TZ=America/Sao_Paulo
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.gl_entrada.rule=Host(`gente-lean.libtools.online`)
+        - traefik.http.routers.gl_entrada.entrypoints=websecure
+        - traefik.http.routers.gl_entrada.priority=1
+        - traefik.http.routers.gl_entrada.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.gl_entrada.service=gl_entrada
+        - traefik.http.services.gl_entrada.loadbalancer.server.port=3000
+        - traefik.http.services.gl_entrada.loadbalancer.passHostHeader=1
+
+  gl_admin:
+    image: ghcr.io/cristianolib/gente-lean-web:latest
+    networks:
+      - LIBNet
+    environment:
+      - APP_SCOPE=admin
+      - TZ=America/Sao_Paulo
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.gl_admin.rule=Host(`gl.libtools.online`)
+        - traefik.http.routers.gl_admin.entrypoints=websecure
+        - traefik.http.routers.gl_admin.priority=1
+        - traefik.http.routers.gl_admin.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.gl_admin.service=gl_admin
+        - traefik.http.services.gl_admin.loadbalancer.server.port=3000
+        - traefik.http.services.gl_admin.loadbalancer.passHostHeader=1
+
+  gl_api:
+    image: ghcr.io/cristianolib/gente-lean-api:latest
+    networks:
+      - LIBNet
+    environment:
+      - TZ=America/Sao_Paulo
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - YOUTUBE_BOT_CLIENT_ID=${YOUTUBE_BOT_CLIENT_ID}
+      - YOUTUBE_BOT_CLIENT_SECRET=${YOUTUBE_BOT_CLIENT_SECRET}
+      - YOUTUBE_BOT_REFRESH_TOKEN=${YOUTUBE_BOT_REFRESH_TOKEN}
+      - YOUTUBE_BOT_LABEL=${YOUTUBE_BOT_LABEL:-BOT LIB}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.gl_api.rule=Host(`gl-api.libtools.online`)
+        - traefik.http.routers.gl_api.entrypoints=websecure
+        - traefik.http.routers.gl_api.priority=1
+        - traefik.http.routers.gl_api.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.gl_api.service=gl_api
+        - traefik.http.services.gl_api.loadbalancer.server.port=3001
+        - traefik.http.services.gl_api.loadbalancer.passHostHeader=1
+
+networks:
+  LIBNet:
+    external: true
+    name: LIBNet

@@ -376,13 +376,23 @@ nunca foram enviados para o canal dele.
 
 ## 9. Deploy
 
-`docker-compose.yml` com dois serviços: a app Node e o Caddy fazendo proxy
-reverso com TLS automático para o domínio. Volume nomeado para o arquivo
-SQLite. `.env` com `ADMIN_KEY` e domínio.
+VPS do LIB, no padrão das outras stacks: **Docker Swarm + Traefik** com
+`letsencryptresolver`, rede externa `LIBNet`, deploy pelo **Portainer** lendo
+`stack.yml` do repositório. Domínio `rtquiz.libtools.online`.
+
+A imagem é construída pelo GitHub Actions a cada push em `main` e publicada em
+`ghcr.io/cristianolib/confere-ou-confia`. O workflow roda os testes antes de
+publicar. `ADMIN_KEY` vive nas variáveis de ambiente da stack no Portainer,
+nunca no YAML.
+
+**Uma réplica, sempre.** O SQLite é um arquivo no volume `rtquiz_dados` e os
+canais SSE vivem na memória do processo — duas réplicas seriam dois placares.
+
+O Traefik não bufferiza respostas por padrão, mas a stack fixa
+`responseForwarding.flushInterval=100ms` no serviço para garantir que os
+eventos SSE cheguem ao telão sem atraso.
 
 Antes da reunião: subir, rodar um ensaio com 3-4 colegas, zerar a rodada.
-
----
 
 ## 10. Testes
 

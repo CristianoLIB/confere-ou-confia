@@ -1,3 +1,5 @@
 node_modules/
 dados/*.sqlite
+dados/*.sqlite-wal
+dados/*.sqlite-shm
 .env

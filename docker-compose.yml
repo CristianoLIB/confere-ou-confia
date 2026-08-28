@@ -1,0 +1,12 @@
+# Só para rodar a imagem localmente. No VPS a stack é stack.yml (Swarm + Traefik).
+services:
+  app:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      ADMIN_KEY: ${ADMIN_KEY:-teste}
+      DB_PATH: /dados/confere.sqlite
+    volumes:
+      - dados:/dados
+volumes:
+  dados:

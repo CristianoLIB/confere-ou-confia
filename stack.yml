@@ -1,0 +1,55 @@
+version: "3.7"
+
+## Confere ou Confia? — Docker Swarm + Traefik, deploy pelo Portainer.
+##
+## Uma imagem só (ghcr.io/cristianolib/confere-ou-confia), construída pelo
+## GitHub Actions a cada push em main. SQLite no volume `rtquiz_dados`.
+##
+## Replicas TEM que ser 1: o SQLite é local e os canais SSE vivem na memória
+## do processo. Duas réplicas = dois placares diferentes.
+##
+## Antes de subir, preencha em "Environment variables" do Portainer (embaixo
+## do editor, NÃO no YAML): ADMIN_KEY — a chave que protege o painel e o
+## telão. O valor real fica só ali, nunca neste arquivo.
+
+services:
+
+  rtquiz:
+    image: ghcr.io/cristianolib/confere-ou-confia:latest
+    networks:
+      - LIBNet
+    environment:
+      - ADMIN_KEY=${ADMIN_KEY:?defina ADMIN_KEY nas variáveis da stack}
+      - DB_PATH=/dados/confere.sqlite
+      - TZ=America/Sao_Paulo
+    volumes:
+      - rtquiz_dados:/dados
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.rtquiz.rule=Host(`rtquiz.libtools.online`)
+        - traefik.http.routers.rtquiz.entrypoints=websecure
+        - traefik.http.routers.rtquiz.priority=1
+        - traefik.http.routers.rtquiz.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.rtquiz.service=rtquiz
+        - traefik.http.services.rtquiz.loadbalancer.server.port=3000
+        - traefik.http.services.rtquiz.loadbalancer.passHostHeader=1
+        # SSE: o Traefik não bufferiza por padrão, mas a resposta é longa.
+        - traefik.http.services.rtquiz.loadbalancer.responseForwarding.flushInterval=100ms
+
+networks:
+  LIBNet:
+    external: true
+    name: LIBNet
+
+volumes:
+  rtquiz_dados:

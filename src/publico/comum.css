@@ -1,0 +1,114 @@
+/* comum.css — marca do LIB em composição de cartaz suíço.
+   Sem canto arredondado, sem sombra difusa, sem gradiente. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --navy:        #29235c;
+  --navy-escuro: #1d1846;
+  --laranja:     #ff8000;
+  --laranja-2:   #e67300;
+  --teal:        #169194;
+  --branco:      #ffffff;
+  --lilas:       #8b87ad;
+  --lilas-claro: #c9c6de;
+  --claro:       #e3e5ee;
+  --texto-claro: #5b5880;
+  --display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --texto:   'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --filete: 3px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--navy-escuro);
+  color: var(--branco);
+  font-family: var(--texto);
+  -webkit-text-size-adjust: 100%;
+}
+
+a { color: var(--laranja); }
+a:hover { color: var(--laranja-2); }
+
+/* Campos de cor chapados, encostados, separados pelo filete. */
+.campo  { padding: 22px 20px; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.navy   { background: var(--navy);    color: var(--branco); }
+.branco { background: var(--branco);  color: var(--navy); }
+.laranja{ background: var(--laranja); color: var(--navy-escuro); }
+.teal   { background: var(--teal);    color: var(--branco); }
+
+.disp {
+  font-family: var(--display);
+  font-variation-settings: 'wdth' 116, 'wght' 800;
+  line-height: .95; letter-spacing: -.02em; text-transform: uppercase; margin: 0;
+}
+.num {
+  font-family: var(--display);
+  font-variation-settings: 'wdth' 112, 'wght' 800;
+  line-height: .8; letter-spacing: -.045em; font-variant-numeric: tabular-nums;
+}
+.etiq { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+
+.cabeca {
+  background: var(--navy); color: var(--lilas);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 44px; flex: 0 0 44px;
+}
+.cabeca strong { color: var(--branco); font-weight: 600; }
+
+/* Barra empilhada: o filete entre segmentos é o mesmo do grid. */
+.trilho { display: flex; gap: var(--filete); background: var(--navy-escuro); width: 100%; }
+.parte  { display: flex; align-items: center; padding: 0 12px; font-size: 15px; font-weight: 600;
+          font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; }
+.p-acerto  { background: var(--branco);  color: var(--navy); }
+.p-erro    { background: var(--laranja); color: var(--navy-escuro); }
+.p-expirou { background: var(--lilas);   color: var(--navy-escuro); }
+
+.chave { display: flex; gap: 26px; flex-wrap: wrap; font-size: 13px; font-weight: 500; color: var(--lilas-claro); }
+.chave span { display: flex; align-items: center; gap: 9px; }
+.quadrado { width: 13px; height: 13px; display: block; }
+
+/* Banda de ação: aviso da trava em cima, botões embaixo. */
+.acoes { background: var(--navy); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.aviso { display: flex; flex-direction: column; gap: 9px; }
+.aviso .etiq { color: #ffb673; }
+.trilha { height: 4px; background: var(--navy-escuro); }
+.trilha i { display: block; height: 100%; background: var(--laranja); }
+
+/* Lado a lado por padrão. O flex-basis decide: só empilha quando não cabem
+   duas colunas de 150px, abaixo de ~305px de largura. */
+.opcoes { display: flex; flex-wrap: wrap; gap: 14px; }
+.opcao {
+  font-family: inherit; border: none; cursor: pointer; text-align: left;
+  flex: 1 1 150px; min-width: 0;
+  background: var(--branco); color: var(--navy); padding: 18px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 18px;
+  box-shadow: 6px 6px 0 var(--navy-escuro);
+  transition: transform .09s ease-out, box-shadow .09s ease-out, background .12s, opacity .2s;
+}
+.opcao:hover:not(:disabled)  { background: #f4f5f9; box-shadow: 3px 3px 0 var(--laranja); transform: translate(3px, 3px); }
+.opcao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(6px, 6px); }
+/* Travado não é apertável, então não fica levantado. */
+.opcao:disabled { background: var(--claro); box-shadow: none; transform: none; cursor: default; opacity: .5; }
+.opcao .topo   { display: flex; align-items: center; justify-content: space-between; }
+.opcao .marca  { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: 0 0 auto; }
+.opcao .texto  { display: flex; flex-direction: column; gap: 4px; }
+.opcao .rotulo { font-family: var(--display); font-variation-settings: 'wdth' 116, 'wght' 800;
+                 text-transform: uppercase; font-size: 21px; line-height: 1; }
+.opcao .nota   { font-size: 13px; font-weight: 500; color: var(--texto-claro); }
+
+/* Acima de 700px o botão vira fileira e a tipografia cresce. Mesma estrutura. */
+@media (min-width: 700px) {
+  .campo { padding: 30px 34px; }
+  .etiq  { font-size: 12px; }
+  .acoes { padding: 24px; gap: 20px; }
+  .opcoes { gap: 22px; }
+  .opcao { padding: 28px; gap: 30px; box-shadow: 9px 9px 0 var(--navy-escuro); }
+  .opcao:hover:not(:disabled)  { box-shadow: 5px 5px 0 var(--laranja); transform: translate(4px, 4px); }
+  .opcao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(9px, 9px); }
+  .opcao .marca  { width: 44px; height: 44px; }
+  .opcao .rotulo { font-size: 46px; }
+  .opcao .nota   { font-size: 19px; }
+}
