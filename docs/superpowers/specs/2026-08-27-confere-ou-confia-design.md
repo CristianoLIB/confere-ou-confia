@@ -48,7 +48,9 @@ Restrições do contexto:
 
 ### 3.1 Participante (celular ou aba do navegador)
 
-1. Abre o link postado no chat do Zoom. Sem login, sem nome. Recebe um rótulo
+1. Abre o link postado no chat do Zoom. Sem login, sem nome. (Sem QR code: a
+   reunião é online e todo mundo já está num computador com o chat à mão — o QR
+   seria uma dependência a mais para um caminho que ninguém usaria.) Recebe um rótulo
    automático só para se reconhecer: *Participante #17*.
 2. Tela de espera enquanto a fase da rodada é `espera`.
 3. Quando você libera, responde **4 situações**, uma por tela, dois botões
@@ -74,7 +76,7 @@ sobreviver à compressão de vídeo do Zoom.
 
 | Fase | O que aparece |
 |---|---|
-| Espera | Link em destaque, QR secundário, contador *"31 conectados"* |
+| Espera | Link em destaque, contador *"31 conectados"* |
 | Respondendo | Progresso coletivo enchendo: *"37 de 48 finalizaram"*. **Zero placar.** |
 | Revelado | A sequência de debrief, avançada pelo seu clique |
 
