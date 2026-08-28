@@ -86,6 +86,18 @@ test('o quiz se recupera de sessão órfã em vez de repetir a mesma questão', 
   assert.match(fonte, /estado\.rodada/, 'o cliente precisa acompanhar qual rodada está observando')
 })
 
+test('o subtítulo do botão é legível e não empurra os botões para empilhar', () => {
+  const css = ler('comum.css')
+  const nota = css.match(/\.opcao \.nota\s*\{[^}]*\}/)[0]
+  const tamanho = Number(nota.match(/font-size:\s*(\d+)px/)[1])
+  assert.ok(tamanho >= 15, `subtítulo com ${tamanho}px é pequeno demais para leitura`)
+  assert.match(nota, /line-height/, 'precisa de entrelinha quando quebra em duas linhas')
+  // Com a nota maior, a base do botão encolhe na tela estreita para os dois
+  // continuarem lado a lado até 320px.
+  const estreita = css.slice(css.indexOf('@media (max-width: 420px)'))
+  assert.match(estreita, /flex-basis:\s*12\dpx/, 'sem base menor, 320px empilha')
+})
+
 test('o botão travado perde o relevo', () => {
   const css = ler('comum.css')
   const travado = css.match(/\.opcao:disabled\s*\{[^}]*\}/)

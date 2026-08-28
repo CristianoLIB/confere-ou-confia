@@ -114,7 +114,7 @@ a:hover { color: var(--laranja-2); }
 .opcao .texto  { display: flex; flex-direction: column; gap: 4px; }
 .opcao .rotulo { font-family: var(--display); font-variation-settings: 'wdth' 116, 'wght' 800;
                  text-transform: uppercase; font-size: 21px; line-height: 1; }
-.opcao .nota   { font-size: 13px; font-weight: 500; color: var(--texto-claro); }
+.opcao .nota   { font-size: 15px; line-height: 1.32; font-weight: 500; color: var(--texto-claro); }
 
 /* Tela estreita: tudo um pouco mais junto para caber sem rolar. */
 @media (max-width: 420px) {
@@ -125,8 +125,9 @@ a:hover { color: var(--laranja-2); }
   .cabeca > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .acoes { padding: 12px; gap: 10px; }
   .opcoes { gap: 10px; }
-  .opcao { padding: 14px; gap: 12px; }
+  .opcao { padding: 14px; gap: 12px; flex-basis: 128px; }
   .opcao .rotulo { font-size: 19px; }
+  .opcao .nota   { font-size: 14px; }
   .opcao .marca { width: 26px; height: 26px; }
 }
 
@@ -141,7 +142,7 @@ a:hover { color: var(--laranja-2); }
   .opcao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(9px, 9px); }
   .opcao .marca  { width: 44px; height: 44px; }
   .opcao .rotulo { font-size: 46px; }
-  .opcao .nota   { font-size: 19px; }
+  .opcao .nota   { font-size: 22px; line-height: 1.3; }
 }
 
 /* Botões de ação do painel e da gestão de questões. Mesmo relevo dos botões

@@ -274,6 +274,7 @@ rodada
   id, criada_em, previsao_participantes, num_questoes_ativas,
   fase TEXT CHECK (fase IN ('espera','respondendo','revelado','encerrado')),
   entradas_abertas INTEGER, segundos_relampago INTEGER, segundos_trava INTEGER,
+              titulo TEXT,
               segundos_preparacao INTEGER, animacao_relampago TEXT,
               passo_debrief INTEGER
 
