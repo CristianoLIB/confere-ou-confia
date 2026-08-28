@@ -6,6 +6,22 @@ import { fileURLToPath } from 'node:url'
 const RAIZ = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const CAMINHO_QUESTOES = path.join(RAIZ, 'dados', 'questoes.json')
 
+// A DDL da rodada fica separada porque a migração precisa recriá-la:
+// o SQLite não altera um CHECK existente.
+const DDL_RODADA = nome => `
+CREATE TABLE IF NOT EXISTS ${nome} (
+  id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+  criada_em              TEXT NOT NULL,
+  previsao_participantes INTEGER NOT NULL,
+  num_questoes_ativas    INTEGER NOT NULL,
+  fase                   TEXT NOT NULL DEFAULT 'espera'
+                         CHECK (fase IN ('espera','respondendo','revelado','encerrado')),
+  entradas_abertas       INTEGER NOT NULL DEFAULT 1,
+  segundos_relampago     INTEGER NOT NULL DEFAULT 10,
+  segundos_trava         INTEGER NOT NULL DEFAULT 4,
+  passo_debrief          INTEGER NOT NULL DEFAULT 0
+);`
+
 const ESQUEMA = `
 CREATE TABLE IF NOT EXISTS questao (
   id           TEXT PRIMARY KEY,
@@ -14,21 +30,11 @@ CREATE TABLE IF NOT EXISTS questao (
   gabarito     TEXT NOT NULL CHECK (gabarito IN ('busca','redacao','confiro')),
   explicacao   TEXT NOT NULL,
   essencial    INTEGER NOT NULL DEFAULT 0,
-  e_relampago  INTEGER NOT NULL DEFAULT 0
+  e_relampago  INTEGER NOT NULL DEFAULT 0,
+  ativa        INTEGER NOT NULL DEFAULT 1
 );
 
-CREATE TABLE IF NOT EXISTS rodada (
-  id                     INTEGER PRIMARY KEY AUTOINCREMENT,
-  criada_em              TEXT NOT NULL,
-  previsao_participantes INTEGER NOT NULL,
-  num_questoes_ativas    INTEGER NOT NULL,
-  fase                   TEXT NOT NULL DEFAULT 'espera'
-                         CHECK (fase IN ('espera','respondendo','revelado')),
-  entradas_abertas       INTEGER NOT NULL DEFAULT 1,
-  segundos_relampago     INTEGER NOT NULL DEFAULT 10,
-  segundos_trava         INTEGER NOT NULL DEFAULT 4,
-  passo_debrief          INTEGER NOT NULL DEFAULT 0
-);
+${DDL_RODADA('rodada')}
 
 CREATE TABLE IF NOT EXISTS rodada_questao (
   rodada_id  INTEGER NOT NULL REFERENCES rodada(id) ON DELETE CASCADE,
@@ -72,14 +78,12 @@ CREATE INDEX IF NOT EXISTS idx_participante_rodada ON participante(rodada_id);
 CREATE INDEX IF NOT EXISTS idx_resposta_questao   ON resposta(questao_id);
 `
 
+// Só insere o que não existe. O JSON é a carga inicial; depois disso quem
+// manda no banco é a página de questões — um restart não pode desfazer edições.
 export function semear (db, questoes) {
   const inserir = db.prepare(`
-    INSERT INTO questao (id, texto, categoria, gabarito, explicacao, essencial, e_relampago)
+    INSERT OR IGNORE INTO questao (id, texto, categoria, gabarito, explicacao, essencial, e_relampago)
     VALUES (@id, @texto, @categoria, @gabarito, @explicacao, @essencial, @e_relampago)
-    ON CONFLICT(id) DO UPDATE SET
-      texto = excluded.texto, categoria = excluded.categoria,
-      gabarito = excluded.gabarito, explicacao = excluded.explicacao,
-      essencial = excluded.essencial, e_relampago = excluded.e_relampago
   `)
   const emLote = db.transaction(lista => {
     for (const q of lista) {
@@ -89,12 +93,38 @@ export function semear (db, questoes) {
   emLote(questoes)
 }
 
+// Bancos criados antes destas colunas/fases existirem.
+export function migrar (db) {
+  const colunas = db.prepare("PRAGMA table_info('questao')").all().map(c => c.name)
+  if (!colunas.includes('ativa')) {
+    db.exec('ALTER TABLE questao ADD COLUMN ativa INTEGER NOT NULL DEFAULT 1')
+  }
+
+  const ddl = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'rodada'").get()?.sql ?? ''
+  if (!ddl.includes("'encerrado'")) {
+    // Com foreign_keys ligado, DROP TABLE rodada apagaria os participantes em cascata.
+    db.pragma('foreign_keys = OFF')
+    db.transaction(() => {
+      db.exec(DDL_RODADA('rodada_nova'))
+      db.exec(`
+        INSERT INTO rodada_nova (id, criada_em, previsao_participantes, num_questoes_ativas,
+                                 fase, entradas_abertas, segundos_relampago, segundos_trava, passo_debrief)
+        SELECT id, criada_em, previsao_participantes, num_questoes_ativas,
+               fase, entradas_abertas, segundos_relampago, segundos_trava, passo_debrief FROM rodada`)
+      db.exec('DROP TABLE rodada')
+      db.exec('ALTER TABLE rodada_nova RENAME TO rodada')
+    })()
+    db.pragma('foreign_keys = ON')
+  }
+}
+
 export function abrirBanco (caminho = process.env.DB_PATH || path.join(RAIZ, 'dados', 'confere.sqlite')) {
   if (caminho !== ':memory:') fs.mkdirSync(path.dirname(caminho), { recursive: true })
   const db = new Database(caminho)
   if (caminho !== ':memory:') db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
   db.exec(ESQUEMA)
+  migrar(db)
   semear(db, JSON.parse(fs.readFileSync(CAMINHO_QUESTOES, 'utf8')))
   return db
 }

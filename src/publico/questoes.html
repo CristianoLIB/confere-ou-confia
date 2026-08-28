@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Questões — Confere ou Confia?</title>
+  <link rel="stylesheet" href="/comum.css">
+  <style>
+    body { display: flex; flex-direction: column; gap: var(--filete); min-height: 100vh; max-width: 1100px; margin: 0 auto; }
+    .duas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--filete); }
+    @media (max-width: 860px) { .duas { grid-template-columns: 1fr; } }
+    .lista { display: flex; flex-direction: column; gap: var(--filete); background: var(--navy-escuro); }
+    .item {
+      display: grid; grid-template-columns: 56px 90px 1fr; gap: 14px; align-items: start;
+      padding: 14px 16px; background: var(--navy); cursor: pointer; border: none; text-align: left;
+      color: var(--branco); font-family: var(--texto);
+    }
+    .item:hover { background: #342d6e; }
+    .item.selecionada { background: var(--branco); color: var(--navy); }
+    .item .id { font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800; font-size: 18px; }
+    .item .meta { display: flex; flex-direction: column; gap: 4px; }
+    .item .texto { font-size: 13px; line-height: 1.4; color: var(--lilas-claro); }
+    .item.selecionada .texto { color: var(--texto-claro); }
+    .item.inativa { opacity: .45; }
+    .marca { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: 3px 6px; }
+    .m-busca { background: var(--laranja); color: var(--navy-escuro); }
+    .m-redacao { background: var(--teal); color: var(--branco); }
+    .m-confiro { background: var(--lilas); color: var(--navy-escuro); }
+    .m-essencial { background: var(--branco); color: var(--navy); }
+    .item.selecionada .m-essencial { background: var(--navy); color: var(--branco); }
+    form { display: flex; flex-direction: column; gap: 16px; }
+    .caixas { display: flex; gap: 22px; flex-wrap: wrap; }
+    .caixas label { flex-direction: row; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; }
+    .caixas input { width: 18px; height: 18px; padding: 0; accent-color: var(--laranja); }
+    #retorno { font-size: 14px; line-height: 1.45; white-space: pre-line; }
+    #retorno.erro { color: #ffb673; }
+    #retorno.ok { color: var(--branco); }
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+  <div class="cabeca etiq"><strong>Questões</strong><span><a href="#" id="linkPainel" style="color: var(--lilas)">← painel</a></span></div>
+
+  <div class="campo navy" style="flex-direction: row; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 14px">
+    <div class="etiq" id="resumo" style="color: var(--lilas-claro)">carregando…</div>
+    <div class="fileira">
+      <button id="nova" class="acao principal">Nova questão</button>
+      <label for="arquivo" class="acao" style="display: inline-block; font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800; text-transform: uppercase; font-size: 15px; padding: 15px 22px; background: var(--branco); color: var(--navy); cursor: pointer; box-shadow: 5px 5px 0 var(--navy-escuro)">Importar CSV</label>
+      <input id="arquivo" type="file" accept=".csv,text/csv">
+      <a id="exportar" href="#"><button class="acao">Exportar CSV</button></a>
+    </div>
+  </div>
+
+  <div class="duas">
+    <div class="lista" id="lista"></div>
+
+    <section class="campo navy">
+      <div class="etiq" style="color: var(--lilas); margin-bottom: 16px" id="tituloForm">Nova questão</div>
+      <form id="form">
+        <div class="fileira" style="gap: 14px">
+          <label style="flex: 0 0 140px"><span class="etiq">id</span><input name="id" maxlength="20" required pattern="[A-Za-z0-9_-]{1,20}"></label>
+          <label style="flex: 0 0 150px"><span class="etiq">gabarito</span>
+            <select name="gabarito"><option value="busca">busca</option><option value="redacao">redação</option><option value="confiro">confiro (relâmpago)</option></select></label>
+          <label style="flex: 1 1 160px"><span class="etiq">categoria</span><input name="categoria" required></label>
+        </div>
+        <label><span class="etiq">texto — a situação, como o participante lê</span><textarea name="texto" required></textarea></label>
+        <label><span class="etiq">explicação — a regra, mostrada na revelação</span><textarea name="explicacao" required></textarea></label>
+        <div class="caixas">
+          <label><input type="checkbox" name="essencial"> essencial (entra em toda rodada)</label>
+          <label><input type="checkbox" name="e_relampago"> relâmpago</label>
+          <label><input type="checkbox" name="ativa" checked> ativa</label>
+        </div>
+        <div class="fileira">
+          <button type="submit" class="acao principal" id="salvar">Salvar</button>
+          <button type="button" class="acao fantasma" id="apagar" hidden>Apagar</button>
+        </div>
+        <div id="retorno"></div>
+      </form>
+    </section>
+  </div>
+
+  <script type="module" src="/questoes.js"></script>
+</body>
+</html>

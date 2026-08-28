@@ -179,6 +179,7 @@ function desenhar (ag) {
   const tela = document.getElementById('tela')
   if (ag.fase === 'espera') { tela.innerHTML = cabeca(ag, 'sala de espera') + telaEspera(ag); return }
   if (ag.fase === 'respondendo') { tela.innerHTML = cabeca(ag, 'respondendo') + telaRespondendo(ag); return }
+  if (ag.fase === 'encerrado') { tela.innerHTML = cabeca(ag, 'encerrado') + telaFechamento(); return }
 
   const passos = montarPassos(ag)
   const indice = Math.min(ag.passoDebrief, passos.length - 1)

@@ -49,6 +49,7 @@ function desenhar (ag) {
   $('passoTexto').textContent = revelado
     ? `${indice + 1}/${passos.length}  ${NOME_DO_PASSO[passo.tipo]}${passo.indice != null ? ` ${passo.indice + 1}` : ''}`
     : 'depois de revelar'
+  $('encerrar').disabled = ag.fase === 'encerrado'
   $('voltar').disabled = !revelado || indice === 0
   $('avancar').disabled = !revelado || indice >= passos.length - 1
 }
@@ -71,6 +72,11 @@ $('entradas').addEventListener('click', () =>
 $('revelar').addEventListener('click', () => {
   if (confirm('Revelar o resultado para todo mundo?')) enviar('/api/painel/fase', { fase: 'revelado' })
 })
+$('encerrar').addEventListener('click', () => {
+  if (confirm('Encerrar para todos? Quem está no quiz vê a tela de encerrado e ninguém novo entra.')) {
+    enviar('/api/painel/fase', { fase: 'encerrado' })
+  }
+})
 $('avancar').addEventListener('click', () =>
   enviar('/api/painel/debrief', { passo: (atual?.passoDebrief ?? 0) + 1 }))
 $('voltar').addEventListener('click', () =>
@@ -80,6 +86,7 @@ $('zerar').addEventListener('click', () => {
 })
 
 $('linkTelao').href = comChave('/telao.html')
+$('linkQuestoes').href = comChave('/questoes.html')
 atualizarPrevisao()
 
 const fonte = new EventSource(comChave('/stream/painel'))

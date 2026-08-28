@@ -7,36 +7,6 @@
   <link rel="stylesheet" href="/comum.css">
   <style>
     body { display: flex; flex-direction: column; gap: var(--filete); min-height: 100vh; max-width: 900px; margin: 0 auto; }
-    .fileira { display: flex; gap: 14px; flex-wrap: wrap; }
-    .fileira.colada { gap: var(--filete); }
-    button.acao {
-      font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800;
-      text-transform: uppercase; font-size: 15px;
-      padding: 15px 22px; border: none; cursor: pointer;
-      background: var(--branco); color: var(--navy);
-      box-shadow: 5px 5px 0 var(--navy-escuro);
-      transition: transform .09s ease-out, box-shadow .09s ease-out, background .12s;
-    }
-    /* Mesmo relevo dos botões de resposta: bloco deslocado de aresta dura. */
-    button.acao:hover:not(:disabled)  { background: #f4f5f9; box-shadow: 2px 2px 0 var(--laranja); transform: translate(3px, 3px); }
-    button.acao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(5px, 5px); }
-    button.acao.principal { background: var(--laranja); color: var(--navy-escuro); }
-    button.acao.principal:hover:not(:disabled) { background: var(--laranja-2); box-shadow: 2px 2px 0 var(--branco); }
-    /* Zerar é destrutivo: mesma base branca, anel e texto em laranja. */
-    button.acao.fantasma { color: var(--laranja); box-shadow: inset 0 0 0 2px var(--laranja), 5px 5px 0 var(--navy-escuro); }
-    button.acao.fantasma:hover { box-shadow: inset 0 0 0 2px var(--laranja), 2px 2px 0 var(--laranja); }
-    button.acao.fantasma:active { box-shadow: inset 0 0 0 2px var(--laranja); }
-    /* Desabilitado não é apertável, então não fica levantado. */
-    button.acao:disabled,
-    button.acao:disabled:hover { background: #3a3470; color: #6a6494; cursor: default;
-                                 box-shadow: none; transform: none; }
-    input {
-      font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800;
-      font-size: 32px; padding: 10px 14px; width: 128px; border: none;
-      background: var(--branco); color: var(--navy); font-variant-numeric: tabular-nums;
-    }
-    label { display: flex; flex-direction: column; gap: 9px; }
-    label .etiq { color: var(--lilas); }
     .contador { flex: 1; }
     .contador .num { font-size: 62px; }
     .contador .etiq { margin-top: 12px; }
@@ -82,6 +52,7 @@
       <button id="liberar" class="acao">Liberar o início</button>
       <button id="entradas" class="acao">Fechar entradas</button>
       <button id="revelar" class="acao principal">Revelar</button>
+      <button id="encerrar" class="acao fantasma">Encerrar para todos</button>
     </div>
   </section>
 
@@ -101,6 +72,7 @@
     <div class="fileira" style="margin-top: 18px">
       <button id="zerar" class="acao fantasma">Zerar rodada</button>
       <a href="#" id="linkTelao" target="_blank"><button class="acao">Abrir telão</button></a>
+      <a href="#" id="linkQuestoes"><button class="acao">Gerenciar questões</button></a>
     </div>
   </section>
 

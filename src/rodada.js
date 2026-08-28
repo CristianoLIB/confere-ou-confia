@@ -3,7 +3,7 @@ import {
   sortearAtribuicao, grupoPorOrdemChegada
 } from './distribuicao.js'
 
-const FASES = ['espera', 'respondendo', 'revelado']
+const FASES = ['espera', 'respondendo', 'revelado', 'encerrado']
 const QUESTOES_POR_PARTICIPANTE = 4
 
 export function criarRodada (db, {
@@ -14,7 +14,7 @@ export function criarRodada (db, {
   aleatorio = Math.random
 }) {
   const k = numQuestoesAtivas ?? calcularQuestoesAtivas(previsaoParticipantes)
-  const questoes = db.prepare('SELECT * FROM questao').all()
+  const questoes = db.prepare('SELECT * FROM questao WHERE ativa = 1').all()
   const ativas = selecionarQuestoesAtivas(questoes, k, aleatorio)
   const relampago = questoes.find(q => q.e_relampago)
   if (!relampago) throw new Error('o banco de questões não tem uma questão relâmpago')
@@ -50,7 +50,7 @@ export function entrarParticipante (db, rodadaId, token, aleatorio = Math.random
 
     const rodada = db.prepare('SELECT * FROM rodada WHERE id = ?').get(rodadaId)
     if (!rodada) throw new Error('rodada inexistente')
-    if (!rodada.entradas_abertas) throw new Error('entradas fechadas')
+    if (!rodada.entradas_abertas || rodada.fase === 'encerrado') throw new Error('entradas fechadas')
 
     const emJogo = questoesEmJogo(db, rodadaId)
     const ativas = emJogo.filter(q => !q.e_relampago)

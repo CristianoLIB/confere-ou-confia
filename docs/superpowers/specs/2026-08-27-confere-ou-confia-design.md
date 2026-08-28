@@ -74,6 +74,12 @@ Restrições do contexto:
    você."*
 8. No instante em que você revela, a tela dela acende junto com o telão e
    mostra o placar pessoal.
+9. Quando você encerra para todos, a tela vira "Dinâmica encerrada".
+
+No celular a tela **cabe na janela sem rolar**: a altura é a visível de
+verdade (`100dvh`, não `100vh`, que conta a área atrás da barra de endereço),
+e se um enunciado for longo demais só ele rola — os botões ficam sempre à
+vista.
 
 O passo 5 é deliberado. Feedback imediato destruiria a segurada — a pessoa
 passaria os últimos minutos sabendo o resultado enquanto você constrói o
@@ -90,6 +96,7 @@ sobreviver à compressão de vídeo do Zoom.
 | Espera | Link em destaque com QR do mesmo link, contador *"31 conectados"* |
 | Respondendo | Progresso coletivo enchendo: *"37 de 48 finalizaram"*. **Zero placar.** |
 | Revelado | A sequência de debrief, avançada pelo seu clique |
+| Encerrado | A tela de fechamento, fixa |
 
 ### 3.3 Painel de controle (só você, em outra tela)
 
@@ -101,7 +108,11 @@ URL protegida por chave. Ações:
 - Liberar o início (`espera` → `respondendo`).
 - **Revelar**.
 - Avançar os passos do debrief.
+- **Encerrar para todos** (`→ encerrado`): quem está no quiz vê "Dinâmica
+  encerrada", ninguém novo entra, o telão fixa o fechamento. Diferente de
+  fechar entradas, que só barra gente nova.
 - Zerar a rodada (para ensaiar antes e limpar).
+- Link para a **gestão de questões** (§3.6).
 
 Telão e painel são URLs separadas de propósito: se os botões estivessem na tela
 compartilhada, o público veria os controles e o que vem a seguir.
@@ -118,6 +129,27 @@ Cada passo avança no seu clique.
 4. **O A/B do relâmpago** — *"quem teve 10 segundos acertou X%. Quem teve tempo
    acertou Y%. Vocês são as mesmas pessoas."*
 5. **Fechamento** — "confiar é ótimo, conferir é obrigatório".
+
+### 3.6 Gestão de questões
+
+Página própria, `questoes.html`, protegida pela mesma chave do painel e
+separada dele de propósito: o painel é a tela do dia da reunião, a gestão é
+trabalho de preparação.
+
+- Listar, criar, editar, **desativar** e apagar. Uma questão já usada numa
+  rodada não pode ser apagada (o histórico referencia ela) — a interface
+  orienta a desativar, e questão inativa nunca entra numa rodada nova.
+- Só pode existir **uma relâmpago ativa**; a interface e o import recusam uma
+  segunda.
+- **Importar CSV**: tudo ou nada — se uma linha falhar, nenhuma entra, e os
+  erros vêm linha a linha. Aceita `;` ou `,`, colunas em qualquer ordem,
+  booleanos como `1/0`, `sim/não`, `true/false`, `x`.
+- **Exportar CSV**: com BOM e separador `;`, que é o que o Excel em pt-BR abre
+  direto. Colunas: `id;gabarito;categoria;essencial;e_relampago;ativa;texto;explicacao`.
+
+`dados/questoes.json` vira **só a carga inicial**: a semeadura insere o que
+não existe e não toca no que já está no banco. Sem isso, um restart desfaria
+qualquer edição feita pela interface.
 
 ### 3.5 Sistema visual
 
@@ -204,13 +236,13 @@ serem testados sem HTTP. É onde mora a lógica que pode dar errado.
 ```sql
 rodada
   id, criada_em, previsao_participantes, num_questoes_ativas,
-  fase TEXT CHECK (fase IN ('espera','respondendo','revelado')),
+  fase TEXT CHECK (fase IN ('espera','respondendo','revelado','encerrado')),
   entradas_abertas INTEGER, segundos_relampago INTEGER, segundos_trava INTEGER,
               passo_debrief INTEGER
 
 questao
   id, texto, categoria, gabarito TEXT CHECK (gabarito IN ('busca','redacao')),
-  explicacao, essencial INTEGER, e_relampago INTEGER
+  explicacao, essencial INTEGER, e_relampago INTEGER, ativa INTEGER DEFAULT 1
 
 rodada_questao                      -- as questões em jogo nesta rodada
   rodada_id, questao_id
@@ -357,6 +389,8 @@ consegue alterar as respostas já gravadas.
 | `POST /api/painel/debrief` | avança o passo do debrief |
 | `POST /api/painel/zerar` | limpa a rodada |
 | `GET /stream/painel` (SSE) | agregados completos |
+| `GET/POST /api/painel/questoes`, `PUT/DELETE /api/painel/questoes/:id` | gestão de questões |
+| `GET /api/painel/questoes.csv`, `POST /api/painel/questoes/importar` | exportar e importar CSV |
 
 ---
 
@@ -426,8 +460,7 @@ Integração:
 
 ## 11. Fora de escopo
 
-Login, nomes, ranking individual, edição de questões por interface (ficam em
-`dados/questoes.json` versionado), histórico entre reuniões além do "zerar",
+Login, nomes, ranking individual, histórico entre reuniões além do "zerar",
 internacionalização, cronômetro nas 4 questões normais.
 
 ---

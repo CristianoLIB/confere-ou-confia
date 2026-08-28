@@ -17,7 +17,7 @@
 - **Nenhum gabarito, explicação ou agregado pode chegar ao canal do participante enquanto a fase não for `revelado`.** Vale para respostas de API e para o payload SSE.
 - A trava anti-repetição é uma **restrição de banco** (`PRIMARY KEY (participante_id, questao_id)` em `resposta`), nunca uma validação só de aplicação.
 - Sem bloqueio ou identificação por IP em nenhum ponto.
-- Fases da rodada, exatamente estas três: `espera`, `respondendo`, `revelado`.
+- Fases da rodada, exatamente estas quatro: `espera`, `respondendo`, `revelado`, `encerrado`.
 - Gabaritos possíveis: `busca`, `redacao` (as 20 questões) e `confiro` (a relâmpago).
 - Escolhas possíveis: `busca`, `redacao`, `confio`, `confiro`, `expirou`.
 - **Trava de armação**: uma resposta que chegue antes de `segundos_trava` (padrão 4s) é recusada com `cedo_demais` e **não é gravada**. Vale para as 4 situações normais; a questão relâmpago é isenta.
@@ -3729,3 +3729,21 @@ rtk git commit -m "feat: empacotamento Docker com Caddy e roteiro de operação"
 | Zerar rodada para ensaio | Tasks 4, 8, 11 |
 | 50 simultâneos | Task 12 |
 | Deploy no VPS com TLS | Task 13 |
+
+---
+
+## Adendo (2026-08-28): encerrar para todos e gestão de questões
+
+Implementado depois do plano original, sob demanda:
+
+- **Fase `encerrado`** — quarta fase. `migrar()` em `db.js` recria a tabela
+  `rodada` em bancos antigos (o SQLite não altera CHECK), com `foreign_keys`
+  desligado durante a cópia para o DROP não cascatear nos participantes.
+- **`questao.ativa`** — coluna nova, `ALTER TABLE` na migração. Seleção de
+  rodada filtra `ativa = 1`.
+- **`semear` passa a `INSERT OR IGNORE`** — o JSON é só carga inicial.
+- **`src/questoes.js`** — validação, CRUD, CSV (parser RFC 4180 próprio,
+  autodetecta `;`/`,`), import tudo-ou-nada. Testes em `testes/questoes.test.js`.
+- **`questoes.html` / `questoes.js`** — a página de gestão.
+- **Mobile** — `100dvh` + `overflow: hidden` no corpo do quiz; o enunciado
+  rola sozinho se precisar.

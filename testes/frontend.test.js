@@ -35,8 +35,8 @@ test('nenhum módulo do servidor identifica ou bloqueia por IP', () => {
   }
 })
 
-test('as três telas existem e declaram a folha compartilhada', () => {
-  for (const arquivo of ['quiz.html', 'telao.html', 'painel.html']) {
+test('as quatro telas existem e declaram a folha compartilhada', () => {
+  for (const arquivo of ['quiz.html', 'telao.html', 'painel.html', 'questoes.html']) {
     assert.match(ler(arquivo), /comum\.css/, `${arquivo} não carrega comum.css`)
   }
 })
@@ -61,6 +61,13 @@ test('nada de canto arredondado nem sombra difusa: a composição é chapada', (
       assert.equal(partes[2], '0', `sombra com desfoque em "${uma.trim()}" — o relevo é bloco de aresta dura`)
     }
   }
+})
+
+test('a tela do participante cabe na janela do celular sem rolar', () => {
+  const html = ler('quiz.html')
+  assert.match(html, /100dvh/, 'altura dinâmica: 100vh conta a área atrás da barra de endereço')
+  assert.match(html, /body\s*\{[^}]*overflow:\s*hidden/, 'o corpo não rola')
+  assert.match(ler('quiz.js'), /enunciado-caixa/, 'o enunciado é quem rola, se precisar')
 })
 
 test('o botão travado perde o relevo', () => {
@@ -157,4 +164,28 @@ test('o painel avisa que não deve ser compartilhado', () => {
 
 test('o painel manda a trava ao criar a rodada', () => {
   assert.match(ler('painel.js'), /segundosTrava/)
+})
+
+// ---------- encerrar para todos ----------
+
+test('cada tela reage à fase encerrado', () => {
+  assert.match(ler('quiz.js'), /encerrado/, 'o participante precisa ver que acabou')
+  assert.match(ler('telao.js'), /'encerrado'/, 'o telão vai para o fechamento')
+  assert.match(ler('painel.html'), /Encerrar para todos/)
+  assert.match(ler('painel.js'), /fase: 'encerrado'/)
+})
+
+// ---------- gestão de questões ----------
+
+test('a gestão de questões fala com as rotas certas e nunca embute a chave', () => {
+  const fonte = ler('questoes.js')
+  for (const rota of ['/api/painel/questoes', '/api/painel/questoes.csv', '/api/painel/questoes/importar']) {
+    assert.ok(fonte.includes(rota), `falta ${rota}`)
+  }
+  assert.ok(!/ADMIN_KEY|chave-de-teste/.test(fonte))
+  assert.match(fonte, /'text\/csv'/, 'o CSV sobe como texto cru')
+})
+
+test('o painel leva à gestão de questões', () => {
+  assert.match(ler('painel.js'), /questoes\.html/)
 })

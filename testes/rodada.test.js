@@ -132,7 +132,7 @@ test('marcarEntregue carimba uma vez só e não reinicia o cronômetro', () => {
 
 test('definirFase recusa fase desconhecida', () => {
   const { db, rodada } = cenario()
-  assert.throws(() => definirFase(db, rodada.id, 'encerrado'), /fase inválida/)
+  assert.throws(() => definirFase(db, rodada.id, 'cancelado'), /fase inválida/)
 })
 
 test('zerar apaga participantes e respostas e volta a fase para espera', () => {
@@ -149,4 +149,28 @@ test('zerar apaga participantes e respostas e volta a fase para espera', () => {
     db.prepare('SELECT COUNT(*) c FROM rodada_questao WHERE rodada_id = ?').get(rodada.id).c,
     11, 'as questões em jogo continuam as mesmas'
   )
+})
+
+test('encerrado é fase válida, e barra participante novo sem expulsar quem já entrou', () => {
+  const { db, rodada } = cenario()
+  const existente = entrarParticipante(db, rodada.id, 'tok-a').participante
+  definirFase(db, rodada.id, 'encerrado')
+  assert.throws(() => entrarParticipante(db, rodada.id, 'tok-novo'), /entradas fechadas/)
+  assert.equal(entrarParticipante(db, rodada.id, 'tok-a').participante.id, existente.id)
+})
+
+test('questão desativada nunca entra numa rodada nova', () => {
+  const db = abrirBanco(':memory:')
+  db.prepare("UPDATE questao SET ativa = 0 WHERE id = 'B1'").run()
+  for (let i = 0; i < 20; i++) {
+    const r = criarRodada(db, { previsaoParticipantes: 60 })  // 14 ativas: quase todas entram
+    const ids = db.prepare('SELECT questao_id FROM rodada_questao WHERE rodada_id = ?').all(r.id).map(l => l.questao_id)
+    assert.ok(!ids.includes('B1'), 'B1 está desativada')
+  }
+})
+
+test('sem relâmpago ativa, criar rodada falha com mensagem clara', () => {
+  const db = abrirBanco(':memory:')
+  db.prepare('UPDATE questao SET ativa = 0 WHERE e_relampago = 1').run()
+  assert.throws(() => criarRodada(db, { previsaoParticipantes: 20 }), /relâmpago/)
 })

@@ -216,7 +216,7 @@ test('o painel troca a fase e o estado reflete', async () => {
 
 test('o painel recusa fase inválida', async () => {
   const { app: a } = montarApp()
-  const r = await a.inject({ method: 'POST', url: comChave('/api/painel/fase'), payload: { fase: 'encerrado' } })
+  const r = await a.inject({ method: 'POST', url: comChave('/api/painel/fase'), payload: { fase: 'cancelado' } })
   assert.equal(r.statusCode, 400)
 })
 
@@ -251,4 +251,82 @@ test('o canal do painel devolve content-type de event-stream com a chave', async
   const { app: a } = montarApp()
   const r = await a.inject({ url: comChave('/stream/painel'), payloadAsStream: true })
   assert.match(r.headers['content-type'], /text\/event-stream/)
+})
+
+// ---------- gestão de questões ----------
+
+const NOVA = { id: 'N1', gabarito: 'busca', categoria: 'teste', texto: 'Enunciado.', explicacao: 'Regra.' }
+
+test('a gestão de questões exige a chave em todas as rotas', async () => {
+  const { app: a } = montarApp()
+  const tentativas = [
+    a.inject({ url: '/api/painel/questoes' }),
+    a.inject({ method: 'POST', url: '/api/painel/questoes', payload: NOVA }),
+    a.inject({ method: 'PUT', url: '/api/painel/questoes/B1', payload: NOVA }),
+    a.inject({ method: 'DELETE', url: '/api/painel/questoes/B1' }),
+    a.inject({ url: '/api/painel/questoes.csv' }),
+    a.inject({ method: 'POST', url: '/api/painel/questoes/importar', headers: { 'content-type': 'text/csv' }, payload: 'id' })
+  ]
+  for (const r of await Promise.all(tentativas)) assert.equal(r.statusCode, 401)
+})
+
+test('criar, listar, editar e apagar uma questão pela API', async () => {
+  const { app: a } = montarApp()
+  const criada = await a.inject({ method: 'POST', url: comChave('/api/painel/questoes'), payload: NOVA })
+  assert.equal(criada.statusCode, 200); assert.equal(criada.json().ativa, 1)
+  assert.equal((await a.inject({ method: 'POST', url: comChave('/api/painel/questoes'), payload: NOVA })).statusCode, 409)
+
+  assert.equal((await a.inject({ url: comChave('/api/painel/questoes') })).json().length, 22)
+
+  const editada = await a.inject({ method: 'PUT', url: comChave('/api/painel/questoes/N1'), payload: { ...NOVA, texto: 'Editado.', ativa: false } })
+  assert.equal(editada.json().texto, 'Editado.'); assert.equal(editada.json().ativa, 0)
+  assert.equal((await a.inject({ method: 'PUT', url: comChave('/api/painel/questoes/ZZ'), payload: NOVA })).statusCode, 404)
+
+  const invalida = await a.inject({ method: 'PUT', url: comChave('/api/painel/questoes/N1'), payload: { ...NOVA, gabarito: 'x' } })
+  assert.equal(invalida.statusCode, 400); assert.ok(invalida.json().erros.length)
+
+  assert.equal((await a.inject({ method: 'DELETE', url: comChave('/api/painel/questoes/N1') })).statusCode, 200)
+  assert.equal((await a.inject({ method: 'DELETE', url: comChave('/api/painel/questoes/N1') })).statusCode, 404)
+})
+
+test('apagar questão em uso devolve 409', async () => {
+  const { db, app: a } = montarApp()
+  const usada = db.prepare('SELECT questao_id id FROM rodada_questao LIMIT 1').get().id
+  const r = await a.inject({ method: 'DELETE', url: comChave(`/api/painel/questoes/${usada}`) })
+  assert.equal(r.statusCode, 409); assert.equal(r.json().motivo, 'em_uso')
+})
+
+test('exportar devolve CSV com BOM e cabeçalho, importar aceita de volta', async () => {
+  const { app: a } = montarApp()
+  const exp = await a.inject({ url: comChave('/api/painel/questoes.csv') })
+  assert.equal(exp.statusCode, 200)
+  assert.match(exp.headers['content-type'], /text\/csv/)
+  assert.match(exp.headers['content-disposition'], /questoes\.csv/)
+  assert.ok(exp.body.startsWith('\uFEFF"id";"gabarito"'))
+
+  const imp = await a.inject({ method: 'POST', url: comChave('/api/painel/questoes/importar'),
+    headers: { 'content-type': 'text/csv' }, payload: exp.body })
+  assert.equal(imp.statusCode, 200)
+  assert.deepEqual(imp.json(), { ok: true, inseridas: 0, atualizadas: 21 })
+})
+
+test('importar com erro devolve 400 e os erros por linha', async () => {
+  const { app: a } = montarApp()
+  const csv = 'id;gabarito;categoria;texto;explicacao\nX1;nada;c;t;e\n'
+  const r = await a.inject({ method: 'POST', url: comChave('/api/painel/questoes/importar'),
+    headers: { 'content-type': 'text/csv' }, payload: csv })
+  assert.equal(r.statusCode, 400)
+  assert.equal(r.json().erros[0].linha, 2)
+})
+
+test('encerrar para todos: fase encerrado bloqueia entrada nova e o participante é avisado', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { cookie } = await entrar(a)
+  const enc = await a.inject({ method: 'POST', url: comChave('/api/painel/fase'), payload: { fase: 'encerrado' } })
+  assert.equal(enc.statusCode, 200)
+  assert.equal((await entrar(a)).status, 403, 'ninguém novo entra')
+  const volta = await entrar(a, `pt=${cookie.value}`)
+  assert.equal(volta.status, 200, 'quem já estava dentro retoma')
+  assert.equal(volta.corpo.fase, 'encerrado')
 })

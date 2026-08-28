@@ -31,7 +31,7 @@ const enviarJson = (url, corpo) => fetch(url, {
 async function entrar () {
   const r = await enviarJson('/api/entrar')
   if (!r.ok) {
-    tela.innerHTML = '<div class="campo navy" style="flex:1; justify-content:center"><p style="color:var(--lilas-claro); font-size:16px; font-weight:500">A dinâmica ainda não abriu, ou as entradas foram encerradas.</p></div>'
+    tela.innerHTML = '<div class="campo navy" style="flex:1; justify-content:center"><p style="color:var(--lilas-claro); font-size:16px; font-weight:500">A dinâmica ainda não abriu, as entradas foram fechadas, ou ela já encerrou.</p></div>'
     return false
   }
   const d = await r.json()
@@ -122,8 +122,8 @@ function desenharQuestao (questao) {
 
   tela.innerHTML = `
     ${comTempo ? '<div class="campo branco" id="faixaTempo" style="flex-direction:row; align-items:baseline; justify-content:space-between; padding-top:14px; padding-bottom:14px"><span class="etiq">tempo</span><span class="num" id="conta" style="font-size:46px"></span></div>' : ''}
-    <div class="campo navy" style="flex:1; justify-content:center">
-      <p style="font-size:22px; line-height:1.36; font-weight:500; margin:0">${escapar(questao.texto)}</p>
+    <div class="campo navy enunciado-caixa">
+      <p class="enunciado">${escapar(questao.texto)}</p>
     </div>
     <div class="acoes">
       ${travado ? '<div class="aviso"><span class="etiq" id="aviso"></span><div class="trilha"><i id="linha" style="width:0"></i></div></div>' : ''}
@@ -199,6 +199,19 @@ async function desenhar () {
       <div class="campo navy" style="flex:1; justify-content:flex-end">
         <div class="disp" style="font-size:52px">Você<br>está<br><span style="color:var(--laranja)">dentro.</span></div>
         <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">${escapar(estado.rotulo)} · aguarde o início</p>
+      </div>`
+    return
+  }
+
+  if (estado.fase === 'encerrado') {
+    marcador.textContent = 'Encerrado'
+    tela.innerHTML = `
+      <div class="campo navy" style="flex:1; justify-content:flex-end">
+        <div class="disp" style="font-size:52px">Dinâmica<br><span style="color:var(--laranja)">encerrada.</span></div>
+        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">Obrigado por participar.</p>
+      </div>
+      <div class="campo branco">
+        <div class="disp" style="font-size:24px">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
       </div>`
     return
   }

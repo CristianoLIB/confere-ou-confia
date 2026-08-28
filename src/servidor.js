@@ -11,6 +11,7 @@ import { abrirBanco } from './db.js'
 import { criarCanal, agendarComDebounce } from './sse.js'
 import { calcularAgregados } from './agregados.js'
 import { registrarResposta, resultadoPessoal } from './respostas.js'
+import * as questoes from './questoes.js'
 import {
   criarRodada, rodadaAtual, entrarParticipante, questoesDoParticipante,
   marcarEntregue, definirFase, definirEntradas, definirPassoDebrief, zerarRodada
@@ -36,6 +37,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   const app = Fastify({ logger })
   app.register(fastifyCookie)
   app.register(fastifyStatic, { root: PASTA_PUBLICA, prefix: '/' })
+  // O CSV importado chega como texto cru.
+  app.addContentTypeParser(['text/csv', 'text/plain'], { parseAs: 'string' }, (req, corpo, done) => done(null, corpo))
 
   // O painel importa a mesma fórmula que o servidor usa. Uma fonte só.
   app.get('/distribuicao-cliente.js', (req, reply) => {
@@ -234,6 +237,51 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     zerarRodada(db, rodada.id)
     emitirParticipantes(); emitirPainel()
     return { ok: true }
+  })
+
+  // ---------- gestão de questões ----------
+
+  app.get('/api/painel/questoes', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    return questoes.listar(db)
+  })
+
+  const responderSalvar = (reply, r) => {
+    if (r.ok) return r.questao
+    const codigo = { invalida: 400, ja_existe: 409, nao_encontrada: 404 }[r.motivo] ?? 400
+    return reply.code(codigo).send({ motivo: r.motivo, erros: r.erros ?? [] })
+  }
+
+  app.post('/api/painel/questoes', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    return responderSalvar(reply, questoes.salvar(db, req.body ?? {}, { criar: true }))
+  })
+
+  app.put('/api/painel/questoes/:id', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    return responderSalvar(reply, questoes.salvar(db, { ...(req.body ?? {}), id: req.params.id }))
+  })
+
+  app.delete('/api/painel/questoes/:id', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    const r = questoes.apagar(db, req.params.id)
+    if (r.ok) return { ok: true }
+    return reply.code(r.motivo === 'em_uso' ? 409 : 404).send({ motivo: r.motivo, usos: r.usos })
+  })
+
+  app.get('/api/painel/questoes.csv', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    reply.type('text/csv; charset=utf-8')
+      .header('content-disposition', 'attachment; filename="questoes.csv"')
+    return questoes.paraCsv(questoes.listar(db))
+  })
+
+  app.post('/api/painel/questoes/importar', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    if (typeof req.body !== 'string') return reply.code(400).send({ erro: 'envie o CSV como text/csv' })
+    const r = questoes.importarCsv(db, req.body)
+    if (!r.ok) return reply.code(400).send(r)
+    return r
   })
 
   app.get('/api/painel/estado', (req, reply) => {
