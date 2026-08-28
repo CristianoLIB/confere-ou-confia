@@ -33,6 +33,11 @@ function atualizarPrevisao () {
     `questões em jogo, cerca de ${Math.round((p * 4) / k)} respostas em cada uma`
 }
 
+// É este endereço que o telão manda digitar e que o QR aponta.
+function mostrarEndereco (atalho) {
+  $('atalhoTexto').textContent = `os participantes entram por ${location.host}/${atalho}`
+}
+
 const NOME_DO_PASSO = {
   placar: 'Placar', categorias: 'Categorias',
   armadilha: 'Armadilha', relampago: 'Relâmpago', fechamento: 'Fechamento'
@@ -40,7 +45,7 @@ const NOME_DO_PASSO = {
 
 // Enquanto o host não mexe nos campos, eles espelham a rodada.
 let ajustesTocados = false
-for (const id of ['titulo', 'trava', 'preparacao', 'segundos', 'animacao']) {
+for (const id of ['titulo', 'atalho', 'trava', 'preparacao', 'segundos', 'animacao']) {
   document.getElementById(id).addEventListener('input', () => {
     ajustesTocados = true
     $('ajustesTexto').textContent = 'alterado — clique em Aplicar'
@@ -57,6 +62,8 @@ function desenhar (ag) {
     $('segundos').value = ag.ajustes.segundosRelampago
     $('animacao').value = ag.ajustes.animacaoRelampago
     $('titulo').value = ag.ajustes.titulo
+    $('atalho').value = ag.ajustes.atalho
+    mostrarEndereco(ag.ajustes.atalho)
     if (primeiro) $('ajustesTexto').textContent = 'em uso nesta rodada'
   }
   $('nConectados').textContent = ag.conectados
@@ -105,7 +112,8 @@ $('criar').addEventListener('click', async () => {
     segundosTrava: Number($('trava').value),
     segundosPreparacao: Number($('preparacao').value),
     animacaoRelampago: $('animacao').value,
-    titulo: $('titulo').value
+    titulo: $('titulo').value,
+    atalho: $('atalho').value
   })
   if (r.ok) await avisar({ titulo: 'Rodada criada', texto: `${(await r.json()).numQuestoesAtivas} questões em jogo.` })
 })
@@ -136,7 +144,8 @@ $('salvarAjustes').addEventListener('click', async () => {
     segundosPreparacao: Number($('preparacao').value),
     segundosRelampago: Number($('segundos').value),
     animacaoRelampago: $('animacao').value,
-    titulo: $('titulo').value
+    titulo: $('titulo').value,
+    atalho: $('atalho').value
   })
   if (r.ok) {
     const d = await r.json()
@@ -146,6 +155,8 @@ $('salvarAjustes').addEventListener('click', async () => {
     $('segundos').value = d.segundosRelampago
     $('animacao').value = d.animacaoRelampago
     $('titulo').value = d.titulo
+    $('atalho').value = d.atalho
+    mostrarEndereco(d.atalho)
     $('ajustesTexto').textContent = 'aplicado — vale na próxima questão de cada um'
     $('ajustesTexto').style.color = 'var(--laranja)'
   }

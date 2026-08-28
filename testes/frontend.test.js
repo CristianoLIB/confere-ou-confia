@@ -143,7 +143,18 @@ test('o QR fica na tela durante a dinâmica, para quem chega atrasado', () => {
   const respondendo = fonte.slice(fonte.indexOf('const telaRespondendo'), fonte.indexOf('const telaPlacar'))
   assert.match(respondendo, /qr\.svg/, 'sem isso o retardatário não tem como entrar')
   assert.match(respondendo, /Chegou agora/)
-  assert.match(respondendo, /location\.host/, 'o link escrito acompanha o QR')
+  assert.match(respondendo, /endereco\(ag\)/, 'o link escrito acompanha o QR')
+})
+
+test('a URL escrita no telão inclui o atalho — só o host dava 404', () => {
+  const fonte = ler('telao.js')
+  assert.match(fonte, /const endereco = ag =>[^\n]*ajustes\?\.atalho/,
+    'digitar só o host não abre nada: a raiz não é rota')
+  // As duas telas com QR — espera e respondendo — precisam da URL completa.
+  assert.equal((fonte.match(/escapar\(endereco\(ag\)\)/g) ?? []).length, 2)
+  assert.equal((fonte.match(/qr\.svg\?a=\$\{encodeURIComponent/g) ?? []).length, 2,
+    'o QR precisa recarregar quando o atalho muda, nas duas telas')
+  assert.ok(!/escapar\(location\.host\)/.test(fonte), 'host sozinho manda a pessoa para um 404')
 })
 
 test('o QR é quadrado nas duas telas em que aparece', () => {
@@ -228,7 +239,7 @@ test('a sala de espera do telão mostra o QR junto com a URL', () => {
   const fonte = ler('telao.js')
   const espera = fonte.slice(fonte.indexOf('const telaEspera'), fonte.indexOf('const telaRespondendo'))
   assert.match(espera, /\/qr\.svg/, 'o QR precisa estar na tela de espera')
-  assert.match(espera, /location\.host/, 'a URL escrita continua ao lado do QR')
+  assert.match(espera, /endereco\(ag\)/, 'a URL escrita, completa, continua ao lado do QR')
 })
 
 test('o telão não embute a chave do painel no código', () => {
@@ -455,6 +466,13 @@ test('trocar o título ao vivo atualiza o quiz sem redesenhar a questão', () =>
   const ouvinte = fonte.slice(fonte.indexOf('function ouvirEstado'))
   assert.match(ouvinte, /cabecaTitulo\.textContent/,
     'o cabeçalho precisa acompanhar sem passar por desenhar(), que reiniciaria a trava')
+})
+
+test('o painel configura o endereço curto e mostra a URL completa', () => {
+  assert.match(ler('painel.html'), /Endereço curto/)
+  assert.match(ler('painel.js'), /atalho: \$\('atalho'\)\.value/)
+  assert.match(ler('painel.js'), /os participantes entram por \$\{location\.host\}/,
+    'o host precisa ver a URL inteira, não só o pedaço')
 })
 
 test('o painel edita o título junto com o ritmo', () => {

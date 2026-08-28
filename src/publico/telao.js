@@ -18,6 +18,9 @@ export function montarPassos (ag) {
   ]
 }
 
+// O que o telão manda digitar precisa ser a URL que de fato abre o quiz.
+const endereco = ag => `${location.host}/${ag.ajustes?.atalho ?? 'rt'}`
+
 const CHAVE = (comExpirou = false) => `<div class="chave">
   <span><i class="quadrado" style="background: var(--branco)"></i>Acertou</span>
   <span><i class="quadrado" style="background: var(--laranja)"></i>Escorregou</span>
@@ -65,8 +68,8 @@ const telaEspera = ag => `
   </div>
   <div class="campo laranja" style="grid-column:8/13; grid-row:2/8; justify-content:space-between; align-items:flex-start">
     <div class="etiq">O link está no chat — ou aponte o celular</div>
-    <div class="qr-caixa"><img class="qr" src="/qr.svg" alt="QR code do link do quiz"></div>
-    <div class="disp t-subtitulo" style="text-transform:none; word-break:break-all">${escapar(location.host)}</div>
+    <div class="qr-caixa"><img class="qr" src="/qr.svg?a=${encodeURIComponent(ag.ajustes?.atalho ?? '')}" alt="QR code do link do quiz"></div>
+    <div class="disp t-subtitulo" style="text-transform:none; word-break:break-all">${escapar(endereco(ag))}</div>
   </div>`
 
 // O QR fica na tela durante a dinâmica: numa reunião online sempre chega
@@ -86,8 +89,8 @@ const telaRespondendo = ag => `
   </div>
   <div class="campo navy" style="grid-column:10/13; grid-row:3/8; justify-content:space-between; align-items:flex-start">
     <div class="etiq" style="color:var(--laranja)">Chegou agora?</div>
-    <div class="qr-caixa"><img class="qr" src="/qr.svg" alt="QR code do link do quiz"></div>
-    <div class="etiq" style="color:var(--lilas-claro); word-break:break-all">${escapar(location.host)}</div>
+    <div class="qr-caixa"><img class="qr" src="/qr.svg?a=${encodeURIComponent(ag.ajustes?.atalho ?? '')}" alt="QR code do link do quiz"></div>
+    <div class="etiq" style="color:var(--lilas-claro); word-break:break-all">${escapar(endereco(ag))}</div>
   </div>`
 
 const telaPlacar = ag => `

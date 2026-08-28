@@ -37,7 +37,8 @@ export function payloadDoParticipante (rodada, liberado = false) {
     segundosTrava: rodada.segundos_trava,
     segundosPreparacao: rodada.segundos_preparacao,
     animacaoRelampago: rodada.animacao_relampago,
-    titulo: rodada.titulo
+    titulo: rodada.titulo,
+    atalho: rodada.atalho
   }
 }
 
@@ -58,13 +59,30 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   // próprio pedido: local vira localhost, no VPS vira rtquiz.libtools.online.
   app.get('/qr.svg', async (req, reply) => {
     const proto = req.headers['x-forwarded-proto'] ?? req.protocol ?? 'https'
-    const url = `${proto}://${req.headers.host}/quiz.html`
+    const rodada = rodadaAtual(db)
+    const url = `${proto}://${req.headers.host}/${rodada?.atalho ?? 'rt'}`
     const svg = await QRCode.toString(url, {
       type: 'svg', margin: 1, errorCorrectionLevel: 'M',
       color: { dark: '#1d1846', light: '#ffffff' }
     })
-    reply.type('image/svg+xml').header('cache-control', 'public, max-age=3600')
+    reply.type('image/svg+xml').header('cache-control', 'no-cache')
     return svg
+  })
+
+  // /rt (ou o atalho da rodada) serve o quiz sem redirecionar: a URL curta é
+  // a que o telão manda digitar, e precisa continuar na barra do navegador.
+  // Reescrever antes do roteamento evita disputar rota com o @fastify/static.
+  app.addHook('onRequest', (req, reply, done) => {
+    const [caminho, consulta] = req.url.split('?')
+    const candidato = caminho.replace(/^\/|\/$/g, '')
+    // Só o que parece atalho chega ao banco: sem barra interna e sem ponto.
+    if (candidato && !candidato.includes('/') && !candidato.includes('.')) {
+      const rodada = rodadaAtual(db)
+      if (rodada && rodada.atalho === candidato.toLowerCase()) {
+        req.raw.url = '/quiz.html' + (consulta ? `?${consulta}` : '')
+      }
+    }
+    done()
   })
 
   const canais = { participantes: criarCanal(), painel: criarCanal() }
@@ -88,7 +106,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       segundosPreparacao: rodada.segundos_preparacao,
       segundosRelampago: rodada.segundos_relampago,
       animacaoRelampago: rodada.animacao_relampago,
-      titulo: rodada.titulo
+      titulo: rodada.titulo,
+      atalho: rodada.atalho
     }
   })
 
@@ -212,14 +231,14 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   app.post('/api/painel/rodada', (req, reply) => {
     if (!exigirChave(req, reply)) return
     const { previsaoParticipantes, numQuestoesAtivas, segundosRelampago, segundosTrava,
-            segundosPreparacao, animacaoRelampago, titulo } = req.body ?? {}
+            segundosPreparacao, animacaoRelampago, titulo, atalho } = req.body ?? {}
     if (!Number.isInteger(previsaoParticipantes) || previsaoParticipantes < 1) {
       return reply.code(400).send({ erro: 'previsaoParticipantes deve ser inteiro positivo' })
     }
     let rodada
     try {
       rodada = criarRodada(db, { previsaoParticipantes, numQuestoesAtivas, segundosRelampago,
-        segundosTrava, segundosPreparacao, animacaoRelampago, titulo })
+        segundosTrava, segundosPreparacao, animacaoRelampago, titulo, atalho })
     } catch (erro) {
       return reply.code(400).send({ erro: erro.message })
     }
@@ -258,7 +277,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       segundosPreparacao: nova.segundos_preparacao,
       segundosRelampago: nova.segundos_relampago,
       animacaoRelampago: nova.animacao_relampago,
-      titulo: nova.titulo
+      titulo: nova.titulo,
+      atalho: nova.atalho
     }
   })
 
@@ -284,7 +304,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       segundosTrava: atual.segundos_trava,
       segundosPreparacao: atual.segundos_preparacao,
       animacaoRelampago: atual.animacao_relampago,
-      titulo: atual.titulo
+      titulo: atual.titulo,
+      atalho: atual.atalho
     })
     emitirParticipantes(); emitirPainel()
     return { arquivada: atual.id, nova: nova.id, numQuestoesAtivas: nova.num_questoes_ativas }

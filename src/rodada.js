@@ -6,6 +6,23 @@ import {
 const FASES = ['espera', 'respondendo', 'revelado', 'encerrado']
 export const ANIMACOES = ['raio', 'flash', 'nenhuma']
 export const TITULO_PADRAO = 'Confere ou Confia?'
+export const ATALHO_PADRAO = 'rt'
+
+// Nomes que já são rota: um atalho igual a eles sequestraria a própria
+// aplicação. Arquivos têm ponto, e a regex de atalho já barra ponto.
+const ATALHOS_RESERVADOS = new Set(['api', 'stream', 'favicon', 'robots', 'assets', 'public'])
+
+// Só letras, números e hífen, em minúsculas: precisa ser ditável em voz alta
+// numa reunião e digitável sem erro.
+export function arrumarAtalho (valor, padrao = ATALHO_PADRAO) {
+  const a = String(valor ?? '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-').replace(/^-|-$/g, '')
+    .slice(0, 40)
+  if (!a || ATALHOS_RESERVADOS.has(a)) return padrao
+  return a
+}
 const TITULO_MAX = 60
 
 // O título é texto de tela em quatro lugares: aparar e limitar aqui evita
@@ -39,9 +56,11 @@ export function criarRodada (db, {
   segundosPreparacao = 5,
   animacaoRelampago = 'raio',
   titulo = TITULO_PADRAO,
+  atalho = ATALHO_PADRAO,
   aleatorio = Math.random
 }) {
   titulo = arrumarTitulo(titulo, TITULO_PADRAO)
+  atalho = arrumarAtalho(atalho)
   segundosRelampago = limitar('segundosRelampago', segundosRelampago, 10)
   segundosTrava = limitar('segundosTrava', segundosTrava, 4)
   segundosPreparacao = limitar('segundosPreparacao', segundosPreparacao, 5)
@@ -56,10 +75,10 @@ export function criarRodada (db, {
     const info = db.prepare(`
       INSERT INTO rodada (criada_em, previsao_participantes, num_questoes_ativas,
                           segundos_relampago, segundos_trava, segundos_preparacao,
-                          animacao_relampago, titulo)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                          animacao_relampago, titulo, atalho)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(new Date().toISOString(), previsaoParticipantes, k, segundosRelampago,
-      segundosTrava, segundosPreparacao, animacaoRelampago, titulo)
+      segundosTrava, segundosPreparacao, animacaoRelampago, titulo, atalho)
     const inserir = db.prepare('INSERT INTO rodada_questao (rodada_id, questao_id) VALUES (?, ?)')
     for (const q of [...ativas, relampago]) inserir.run(info.lastInsertRowid, q.id)
     return db.prepare('SELECT * FROM rodada WHERE id = ?').get(info.lastInsertRowid)
@@ -171,12 +190,13 @@ export function definirAjustes (db, rodadaId, ajustes = {}) {
       ? limitar('segundosRelampago', ajustes.segundosRelampago, atual.segundos_relampago) : atual.segundos_relampago,
     animacao_relampago: ANIMACOES.includes(ajustes.animacaoRelampago)
       ? ajustes.animacaoRelampago : atual.animacao_relampago,
-    titulo: 'titulo' in ajustes ? arrumarTitulo(ajustes.titulo, atual.titulo) : atual.titulo
+    titulo: 'titulo' in ajustes ? arrumarTitulo(ajustes.titulo, atual.titulo) : atual.titulo,
+    atalho: 'atalho' in ajustes ? arrumarAtalho(ajustes.atalho, atual.atalho) : atual.atalho
   }
   db.prepare(`
     UPDATE rodada SET segundos_trava = @segundos_trava, segundos_preparacao = @segundos_preparacao,
                       segundos_relampago = @segundos_relampago, animacao_relampago = @animacao_relampago,
-                      titulo = @titulo
+                      titulo = @titulo, atalho = @atalho
     WHERE id = ${rodadaId}
   `).run(novo)
   return db.prepare('SELECT * FROM rodada WHERE id = ?').get(rodadaId)

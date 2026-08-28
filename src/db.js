@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS ${nome} (
   segundos_relampago     INTEGER NOT NULL DEFAULT 10,
   segundos_trava         INTEGER NOT NULL DEFAULT 4,
   titulo                 TEXT NOT NULL DEFAULT 'Confere ou Confia?',
+  atalho                 TEXT NOT NULL DEFAULT 'rt',
   segundos_preparacao    INTEGER NOT NULL DEFAULT 5,
   animacao_relampago     TEXT NOT NULL DEFAULT 'raio',
   passo_debrief          INTEGER NOT NULL DEFAULT 0
@@ -106,6 +107,9 @@ export function migrar (db) {
   // Colunas novas da rodada. Sem CHECK: o ALTER do SQLite não o aplicaria ao
   // que já existe, e a validação mora em rodada.js, valendo para todo caminho.
   const daRodada = db.prepare("PRAGMA table_info('rodada')").all().map(c => c.name)
+  if (daRodada.length && !daRodada.includes('atalho')) {
+    db.exec("ALTER TABLE rodada ADD COLUMN atalho TEXT NOT NULL DEFAULT 'rt'")
+  }
   if (daRodada.length && !daRodada.includes('titulo')) {
     db.exec("ALTER TABLE rodada ADD COLUMN titulo TEXT NOT NULL DEFAULT 'Confere ou Confia?'")
   }

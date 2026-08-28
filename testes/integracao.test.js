@@ -58,11 +58,12 @@ test('VAZAMENTO: a resposta de entrar não contém gabarito nem explicação', a
 test('VAZAMENTO: o payload do canal do participante só carrega fase e cronômetro', () => {
   const payload = payloadDoParticipante({
     id: 7, fase: 'respondendo', segundos_relampago: 10, segundos_trava: 4,
-    segundos_preparacao: 5, animacao_relampago: 'raio', titulo: 'Buscar ou Redigir?', passo_debrief: 3,
+    segundos_preparacao: 5, animacao_relampago: 'raio', titulo: 'Buscar ou Redigir?',
+    atalho: 'rt', passo_debrief: 3,
     previsao_participantes: 45, num_questoes_ativas: 10
   })
   assert.deepEqual(Object.keys(payload).sort(),
-    ['animacaoRelampago', 'fase', 'resultadoLiberado', 'rodada',
+    ['animacaoRelampago', 'atalho', 'fase', 'resultadoLiberado', 'rodada',
      'segundosPreparacao', 'segundosRelampago', 'segundosTrava', 'titulo'])
   assert.equal(payload.rodada, 7, 'o cliente precisa perceber quando a rodada trocou')
   assert.equal(payload.resultadoLiberado, false, 'o gate vem fechado por padrão')
@@ -254,13 +255,82 @@ test('com as entradas fechadas, entrar devolve 403', async () => {
   assert.equal((await entrar(a)).status, 403)
 })
 
-test('/qr.svg devolve um SVG apontando para o quiz no host do pedido', async () => {
+test('/qr.svg devolve um SVG e não fica preso em cache quando o atalho muda', async () => {
   const { app: a } = montarApp()
   const r = await a.inject({ url: '/qr.svg', headers: { host: 'rtquiz.libtools.online', 'x-forwarded-proto': 'https' } })
   assert.equal(r.statusCode, 200)
   assert.match(r.headers['content-type'], /image\/svg\+xml/)
   assert.match(r.body, /^<svg/)
-  assert.match(r.headers['cache-control'], /max-age/)
+  assert.match(r.headers['cache-control'], /no-cache/, 'o atalho muda no painel; o QR precisa acompanhar')
+})
+
+// ---------- atalho: a URL que o telão manda digitar ----------
+
+test('ATALHO: a URL curta abre o quiz sem redirecionar', async () => {
+  const { app: a } = montarApp()
+  const r = await a.inject({ url: '/rt' })
+  assert.equal(r.statusCode, 200)
+  assert.match(r.body, /RTQuiz/, 'serve o quiz na própria URL curta')
+  assert.match(r.body, /quiz\.js/)
+})
+
+test('ATALHO: continua funcionando com barra no fim', async () => {
+  const { app: a } = montarApp()
+  assert.equal((await a.inject({ url: '/rt/' })).statusCode, 200)
+})
+
+test('ATALHO: um caminho que não é o atalho segue 404', async () => {
+  const { app: a } = montarApp()
+  assert.equal((await a.inject({ url: '/outracoisa' })).statusCode, 404)
+  assert.equal((await a.inject({ url: '/' })).statusCode, 404)
+})
+
+test('ATALHO: não atrapalha os arquivos nem a API', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  for (const url of ['/quiz.html', '/comum.css', '/quiz.js', '/telao.js', '/qr.svg']) {
+    assert.equal((await a.inject({ url })).statusCode, 200, url)
+  }
+  assert.equal((await a.inject({ method: 'POST', url: '/api/entrar' })).statusCode, 200)
+  assert.equal((await a.inject({ url: comChave('/api/painel/estado') })).statusCode, 200)
+})
+
+test('ATALHO: mudar no painel troca a URL curta na hora', async () => {
+  const { app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { atalho: 'rt-28-08-2026' } })
+  assert.equal((await a.inject({ url: '/rt-28-08-2026' })).statusCode, 200)
+  assert.equal((await a.inject({ url: '/rt' })).statusCode, 404, 'o antigo deixa de valer')
+})
+
+test('ATALHO: é normalizado — acento, espaço e maiúscula viram hífen e minúscula', async () => {
+  const { app: a } = montarApp()
+  const ajustar = atalho => a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { atalho } })
+  assert.equal((await ajustar('  Reunião Técnica 2026 ')).json().atalho, 'reuniao-tecnica-2026')
+  assert.equal((await ajustar('RT//28')).json().atalho, 'rt-28')
+  assert.equal((await ajustar('---')).json().atalho, 'rt-28', 'vazio depois de limpar mantém o anterior')
+})
+
+test('ATALHO: nomes que já são rota são recusados', async () => {
+  const { app: a } = montarApp()
+  const ajustar = atalho => a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { atalho } })
+  await ajustar('rt')
+  for (const reservado of ['api', 'stream', 'favicon']) {
+    assert.equal((await ajustar(reservado)).json().atalho, 'rt', `${reservado} sequestraria a aplicação`)
+  }
+  // E a API continua respondendo.
+  assert.equal((await a.inject({ url: comChave('/api/painel/estado') })).statusCode, 200)
+})
+
+test('ATALHO: criar rodada e arquivar preservam o atalho', async () => {
+  const { db, app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/rodada'),
+    payload: { previsaoParticipantes: 30, atalho: 'pilula-3' } })
+  assert.equal(db.prepare('SELECT atalho FROM rodada ORDER BY id DESC LIMIT 1').get().atalho, 'pilula-3')
+  definirFase(db, db.prepare('SELECT MAX(id) id FROM rodada').get().id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+  const { nova } = (await a.inject({ method: 'POST', url: comChave('/api/painel/arquivar') })).json()
+  assert.equal(db.prepare('SELECT atalho FROM rodada WHERE id = ?').get(nova).atalho, 'pilula-3')
 })
 
 test('/qr.svg não exige chave: é o participante que escaneia', async () => {
@@ -546,7 +616,7 @@ test('AJUSTES: mudam a rodada em andamento e chegam ao participante', async () =
     payload: { segundosTrava: 6, segundosPreparacao: 8, segundosRelampago: 15, animacaoRelampago: 'flash' } })
   assert.equal(r.statusCode, 200)
   assert.deepEqual(r.json(), { segundosTrava: 6, segundosPreparacao: 8, segundosRelampago: 15,
-    animacaoRelampago: 'flash', titulo: 'Confere ou Confia?' })
+    animacaoRelampago: 'flash', titulo: 'Confere ou Confia?', atalho: 'rt' })
 
   // Sem criar rodada nova: o mesmo participante já recebe o novo ritmo.
   const depois = await entrar(a, `pt=${antes.cookie.value}`)
@@ -561,7 +631,7 @@ test('AJUSTES: o servidor limita os valores e ignora animação inválida', asyn
   const r = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
     payload: { segundosTrava: 999, segundosPreparacao: -5, segundosRelampago: 1, animacaoRelampago: 'discoteca' } })
   assert.deepEqual(r.json(), { segundosTrava: 15, segundosPreparacao: 0, segundosRelampago: 3,
-    animacaoRelampago: 'raio', titulo: 'Confere ou Confia?' })
+    animacaoRelampago: 'raio', titulo: 'Confere ou Confia?', atalho: 'rt' })
 })
 
 test('AJUSTES: mexer num campo não altera os outros', async () => {
@@ -570,14 +640,14 @@ test('AJUSTES: mexer num campo não altera os outros', async () => {
     payload: { segundosTrava: 7, animacaoRelampago: 'nenhuma' } })
   const so = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { segundosPreparacao: 3 } })
   assert.deepEqual(so.json(), { segundosTrava: 7, segundosPreparacao: 3, segundosRelampago: 10,
-    animacaoRelampago: 'nenhuma', titulo: 'Confere ou Confia?' })
+    animacaoRelampago: 'nenhuma', titulo: 'Confere ou Confia?', atalho: 'rt' })
 })
 
 test('AJUSTES: o painel mostra o ritmo em uso', async () => {
   const { app: a } = montarApp()
   const estado = (await a.inject({ url: comChave('/api/painel/estado') })).json()
   assert.deepEqual(Object.keys(estado.ajustes).sort(),
-    ['animacaoRelampago', 'segundosPreparacao', 'segundosRelampago', 'segundosTrava', 'titulo'])
+    ['animacaoRelampago', 'atalho', 'segundosPreparacao', 'segundosRelampago', 'segundosTrava', 'titulo'])
 })
 
 test('criar rodada aceita o ritmo e a animação', async () => {
