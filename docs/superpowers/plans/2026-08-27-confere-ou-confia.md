@@ -138,7 +138,7 @@ Dockerfile  docker-compose.yml  Caddyfile  .env.example
 ```bash
 npm init -y
 npm pkg set type=module engines.node=">=22"
-npm pkg set scripts.start="node src/servidor.js" scripts.test="node --test testes/"
+npm pkg set scripts.start="node src/servidor.js" scripts.test='node --test "testes/**/*.test.js"'
 npm install fastify @fastify/static @fastify/cookie better-sqlite3
 ```
 
