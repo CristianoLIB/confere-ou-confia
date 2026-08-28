@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Confere ou Confia?</title>
+  <link rel="stylesheet" href="/comum.css">
+  <style>
+    body { display: flex; flex-direction: column; gap: var(--filete); min-height: 100vh; }
+    main { display: flex; flex-direction: column; gap: var(--filete); flex: 1; }
+    @media (min-width: 700px) {
+      body { max-width: 1100px; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cabeca etiq"><strong>Confere ou Confia?</strong><span id="marcador"></span></div>
+  <main id="tela" aria-live="polite"></main>
+  <script type="module" src="/quiz.js"></script>
+</body>
+</html>
