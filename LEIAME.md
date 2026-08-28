@@ -14,20 +14,33 @@ ADMIN_KEY=teste npm start
 Abrir `http://localhost:3000/painel.html?k=teste`, criar a rodada, e depois
 `http://localhost:3000/quiz.html` numa aba anônima.
 
-## Subir no VPS
+## Subir no VPS (Portainer + Swarm + Traefik)
 
-```bash
-cp .env.example .env   # editar DOMINIO e ADMIN_KEY
-docker compose up -d --build
-```
+A imagem é construída pelo GitHub Actions a cada push em `main` e publicada em
+`ghcr.io/cristianolib/confere-ou-confia:latest`. A stack está em `stack.yml`.
+
+**Primeira vez**, no Portainer: Stacks → Add stack → **Repository** →
+URL do repositório, referência `refs/heads/main`, compose path `stack.yml`.
+Em **Environment variables** (embaixo do editor, não no YAML), criar
+`ADMIN_KEY` com uma chave longa. Deploy.
+
+**Atualizar** depois de um push em `main`: esperar o Actions terminar, então
+no Portainer abrir a stack → **Update the stack** → marcar **Re-pull image and
+redeploy** → Update.
+
+**Nunca** subir para mais de uma réplica: o SQLite é local e os canais SSE
+vivem na memória do processo.
+
+DNS: `rtquiz.libtools.online` → IP do VPS (registro A, igual aos outros
+subdomínios da `libtools.online`).
 
 ## As três telas
 
 | Tela | URL | Quem vê |
 |---|---|---|
-| Quiz | `https://SEU_DOMINIO/quiz.html` | vai no chat do Zoom |
-| Telão | `https://SEU_DOMINIO/telao.html?k=CHAVE` | você compartilha esta |
-| Painel | `https://SEU_DOMINIO/painel.html?k=CHAVE` | só você, segunda tela |
+| Quiz | `https://rtquiz.libtools.online/quiz.html` | vai no chat do Zoom |
+| Telão | `https://rtquiz.libtools.online/telao.html?k=CHAVE` | você compartilha esta |
+| Painel | `https://rtquiz.libtools.online/painel.html?k=CHAVE` | só você, segunda tela |
 
 ## Roteiro do dia
 

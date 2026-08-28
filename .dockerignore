@@ -1,0 +1,7 @@
+node_modules
+dados/*.sqlite*
+design
+docs
+testes
+.github
+.env

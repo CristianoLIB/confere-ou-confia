@@ -1,7 +1,0 @@
-{$DOMINIO} {
-	encode zstd gzip
-	# SSE não pode passar por buffer: o telão precisa dos eventos na hora.
-	reverse_proxy app:3000 {
-		flush_interval -1
-	}
-}
