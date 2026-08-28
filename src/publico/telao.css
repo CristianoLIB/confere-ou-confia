@@ -1,0 +1,32 @@
+/* telao.css — cartaz de 12 colunas, campos chapados separados pelo filete.
+   Desenhado para projeção via Zoom: tipografia grande, poucos elementos. */
+body { overflow: hidden; }
+
+.cartaz {
+  display: grid; gap: var(--filete); background: var(--navy-escuro);
+  width: 100vw; height: 100vh;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: clamp(38px, 3.4vw, 44px) repeat(6, 1fr);
+}
+.cartaz > .campo { padding: clamp(18px, 2vw, 30px) clamp(20px, 2.4vw, 34px); overflow: hidden; }
+
+.cabeca { grid-column: 1 / 13; height: auto; flex: initial; padding: 0 clamp(20px, 2.4vw, 34px); }
+
+/* Escala tipográfica do telão, em vw para acompanhar a janela projetada. */
+.t-titulo    { font-size: clamp(28px, 5vw, 66px); }
+.t-subtitulo { font-size: clamp(20px, 3vw, 40px); }
+.t-corpo     { font-size: clamp(16px, 2.1vw, 27px); line-height: 1.32; font-weight: 500; margin: 0; }
+.t-heroi     { font-size: clamp(90px, 17.5vw, 224px); }
+.t-numero    { font-size: clamp(48px, 10.3vw, 132px); }
+.t-marca     { font-size: clamp(96px, 13.4vw, 172px); }
+
+.linhas { display: grid; gap: clamp(10px, 1.2vw, 15px); }
+.linha  { display: grid; grid-template-columns: clamp(160px, 22vw, 290px) 1fr clamp(64px, 7vw, 92px);
+          gap: clamp(12px, 1.6vw, 20px); align-items: center; }
+.linha .nome { font-size: clamp(13px, 1.35vw, 17px); font-weight: 500; }
+.linha .n    { text-align: right; color: var(--lilas); font-variant-numeric: tabular-nums; }
+.linha .trilho { height: clamp(28px, 3.4vw, 44px); }
+.linha .parte  { font-size: clamp(12px, 1.2vw, 15px); }
+.trilho.solo   { height: clamp(28px, 3.4vw, 44px); }
+
+.regra { border-left: 3px solid var(--laranja); padding-left: clamp(14px, 1.6vw, 20px); }
