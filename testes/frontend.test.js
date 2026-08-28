@@ -114,6 +114,35 @@ test('o fechamento do telão fala com quem está lendo', () => {
   assert.match(fonte, /o seu resultado está na sua tela/)
 })
 
+test('a sala de espera explica a dinâmica antes de começar', () => {
+  const fonte = ler('quiz.js')
+  const espera = fonte.slice(fonte.indexOf("estado.fase === 'espera'"), fonte.indexOf('const questao = pendente()'))
+  assert.match(espera, /Como vai ser/)
+  assert.match(espera, /class="passos"/)
+  assert.equal((espera.match(/<li>/g) ?? []).length, 4, 'quatro passos: curto o bastante para caber')
+  // O tutorial diz o tempo real da trava, não um número inventado.
+  assert.match(espera, /estado\.segundosTrava/)
+  assert.match(ler('comum.css'), /\.passos li::before/, 'os passos são numerados por CSS')
+})
+
+test('o QR fica na tela durante a dinâmica, para quem chega atrasado', () => {
+  const fonte = ler('telao.js')
+  const respondendo = fonte.slice(fonte.indexOf('const telaRespondendo'), fonte.indexOf('const telaPlacar'))
+  assert.match(respondendo, /qr\.svg/, 'sem isso o retardatário não tem como entrar')
+  assert.match(respondendo, /Chegou agora/)
+  assert.match(respondendo, /location\.host/, 'o link escrito acompanha o QR')
+})
+
+test('o QR é quadrado nas duas telas em que aparece', () => {
+  const css = ler('telao.css')
+  assert.match(css, /\.cartaz \.qr-caixa/, 'a caixa absorve o espaço')
+  assert.match(css, /\.cartaz \.qr \{[^}]*aspect-ratio: 1/)
+  assert.match(css, /\.cartaz \.qr \{[^}]*max-height: 100%/, 'sem o teto de altura a imagem estica')
+  // Uma regra solta depois desta desfazia o limite: não pode voltar.
+  const depois = css.slice(css.indexOf('.cartaz .qr {'))
+  assert.ok(!/^\.qr \{/m.test(depois), 'regra .qr solta sobrescreveria o limite de altura')
+})
+
 test('o botão travado perde o relevo', () => {
   const css = ler('comum.css')
   const travado = css.match(/\.opcao:disabled\s*\{[^}]*\}/)

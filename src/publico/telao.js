@@ -65,22 +65,29 @@ const telaEspera = ag => `
   </div>
   <div class="campo laranja" style="grid-column:8/13; grid-row:2/8; justify-content:space-between; align-items:flex-start">
     <div class="etiq">O link está no chat — ou aponte o celular</div>
-    <img class="qr" src="/qr.svg" alt="QR code do link do quiz">
+    <div class="qr-caixa"><img class="qr" src="/qr.svg" alt="QR code do link do quiz"></div>
     <div class="disp t-subtitulo" style="text-transform:none; word-break:break-all">${escapar(location.host)}</div>
   </div>`
 
+// O QR fica na tela durante a dinâmica: numa reunião online sempre chega
+// alguém atrasado, e as entradas seguem abertas.
 const telaRespondendo = ag => `
-  <div class="campo navy" style="grid-column:1/13; grid-row:2/4; justify-content:center">
-    <h1 class="disp t-titulo">Ninguém vê resultado<br>ainda. <span style="color:var(--laranja)">Nem eu.</span></h1>
+  <div class="campo navy" style="grid-column:1/13; grid-row:2/3; justify-content:center">
+    <h1 class="disp t-subtitulo">Ninguém vê resultado ainda. <span style="color:var(--laranja)">Nem eu.</span></h1>
   </div>
-  <div class="campo branco" style="grid-column:1/5; grid-row:4/8; justify-content:flex-end">
+  <div class="campo branco" style="grid-column:1/4; grid-row:3/8; justify-content:flex-end">
     <div class="num t-numero">${ag.conectados}</div><div class="etiq" style="margin-top:14px; color:var(--texto-claro)">conectados</div>
   </div>
-  <div class="campo laranja" style="grid-column:5/9; grid-row:4/8; justify-content:flex-end">
+  <div class="campo laranja" style="grid-column:4/7; grid-row:3/8; justify-content:flex-end">
     <div class="num t-numero">${ag.respondendo}</div><div class="etiq" style="margin-top:14px">respondendo</div>
   </div>
-  <div class="campo teal" style="grid-column:9/13; grid-row:4/8; justify-content:flex-end">
+  <div class="campo teal" style="grid-column:7/10; grid-row:3/8; justify-content:flex-end">
     <div class="num t-numero">${ag.finalizados}</div><div class="etiq" style="margin-top:14px">finalizados</div>
+  </div>
+  <div class="campo navy" style="grid-column:10/13; grid-row:3/8; justify-content:space-between; align-items:flex-start">
+    <div class="etiq" style="color:var(--laranja)">Chegou agora?</div>
+    <div class="qr-caixa"><img class="qr" src="/qr.svg" alt="QR code do link do quiz"></div>
+    <div class="etiq" style="color:var(--lilas-claro); word-break:break-all">${escapar(location.host)}</div>
   </div>`
 
 const telaPlacar = ag => `

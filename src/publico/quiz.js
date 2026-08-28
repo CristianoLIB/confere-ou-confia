@@ -272,11 +272,26 @@ async function desenhar () {
   marcador.textContent = estado.rotulo
 
   if (estado.fase === 'espera') {
+    // A espera é o único momento em que dá para explicar as regras sem
+    // atrapalhar: durante as perguntas o cronômetro corre.
+    const trava = estado.segundosTrava > 0
+      ? `Os botões liberam <strong>${estado.segundosTrava} segundos</strong> depois de cada situação aparecer. Dá tempo de ler com calma.`
+      : 'Leia a situação inteira antes de decidir.'
     tela.innerHTML = `
-      <div class="campo navy" style="flex:1; justify-content:flex-end">
-        <div class="disp disp-xl">Você<br>está<br><span style="color:var(--laranja)">dentro.</span></div>
-        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">${escapar(estado.rotulo)} · aguarde o início</p>
-      </div>`
+      <div class="campo navy">
+        <div class="disp disp-l">Você está<br><span style="color:var(--laranja)">dentro.</span></div>
+        <p style="font-size:15px; color:var(--lilas-claro); margin:16px 0 0; font-weight:500">${escapar(estado.rotulo)} · aguarde o início</p>
+      </div>
+      <div class="campo branco" style="flex:1; justify-content:center">
+        <div class="etiq" style="color:var(--texto-claro)">Como vai ser</div>
+        <ol class="passos">
+          <li><strong>Quatro situações</strong> do dia a dia, uma por vez.</li>
+          <li>Em cada uma você decide: <strong>buscar na fonte</strong> ou <strong>deixar com a IA</strong>?</li>
+          <li>${trava}</li>
+          <li>No fim, uma <strong>pergunta relâmpago</strong>.</li>
+        </ol>
+      </div>
+      <div class="campo teal etiq">ninguém vê o resultado até o final</div>`
     return
   }
 

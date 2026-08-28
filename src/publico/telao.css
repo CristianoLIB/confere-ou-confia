@@ -46,7 +46,12 @@ body { overflow: hidden; }
 
 .regra { border-left: 3px solid var(--laranja); padding-left: clamp(14px, 1.6vw, 20px); }
 
+/* O QR da coluna lateral. A caixa absorve o espaço entre a etiqueta e o link;
+   a imagem fica quadrada dentro dela, limitada pelo lado mais curto. */
+.cartaz .qr-caixa { flex: 1 1 auto; min-height: 0; width: 100%;
+                    display: flex; align-items: center; justify-content: center;
+                    padding: clamp(8px, 1.4vh, 18px) 0; }
+.cartaz .qr { max-width: 100%; max-height: 100%; aspect-ratio: 1; background: var(--branco); }
+
 /* O QR é a coisa que precisa ser escaneada de um compartilhamento de Zoom:
    quadrado, fundo branco chapado, e tão grande quanto o campo permitir. */
-.qr { display: block; flex: 1 1 auto; min-height: 0; width: auto; max-width: 100%;
-      aspect-ratio: 1; background: var(--branco); margin: clamp(12px, 2vh, 24px) 0; }
