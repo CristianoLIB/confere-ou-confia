@@ -362,6 +362,14 @@ Limpar o navegador ou usar aba anônima cria um participante novo. Aceitável
 para uma dinâmica interna: quem fizer isso recebe outras questões e não
 consegue alterar as respostas já gravadas.
 
+**Sessão órfã.** Se o host zerar a rodada ou criar outra com participantes de
+aba aberta, o token deles deixa de corresponder a alguém na rodada atual e o
+servidor responde 401. O payload do canal do participante carrega o `id` da
+rodada justamente para o cliente perceber a troca: ao ver um id diferente, ou
+ao receber 401/503, ele se **reinscreve** — entra na rodada corrente e
+redesenha do zero. Sem isso o participante ficava preso repetindo a mesma
+questão, já que uma resposta recusada nunca entrava na lista de respondidas.
+
 **Sem bloqueio por IP.**
 
 ---

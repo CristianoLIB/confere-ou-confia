@@ -3,10 +3,15 @@ const tela = document.getElementById('tela')
 const marcador = document.getElementById('marcador')
 
 const estado = {
-  rotulo: '', fase: 'espera', segundosTrava: 4, segundosRelampago: 10,
+  rodada: null, rotulo: '', fase: 'espera', segundosTrava: 4, segundosRelampago: 10,
   questoes: [], respondidas: new Set(), enviando: false, preparado: false,
-  mostradaEm: 0, cronometro: null, trava: null, resultado: null
+  mostradaEm: 0, cronometro: null, trava: null, resultado: null, reentrando: false
 }
+
+// 401: o participante sumiu do servidor (o host zerou a rodada ou criou outra).
+// 503: não há rodada aberta. Em ambos, insistir na sessão velha é o que
+// prendia o participante repetindo a mesma questão.
+const SESSAO_PERDIDA = [401, 503]
 
 const escapar = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 
@@ -36,11 +41,25 @@ async function entrar () {
   }
   const d = await r.json()
   Object.assign(estado, {
-    rotulo: d.rotulo, fase: d.fase,
+    rodada: d.rodada, rotulo: d.rotulo, fase: d.fase,
     segundosTrava: d.segundosTrava, segundosRelampago: d.segundosRelampago,
-    questoes: d.questoes, respondidas: new Set(d.jaRespondidas)
+    questoes: d.questoes, respondidas: new Set(d.jaRespondidas),
+    // Sessão nova: o que era da anterior não vale mais.
+    preparado: false, resultado: null
   })
   return true
+}
+
+// Refaz a inscrição e redesenha do zero. Guardado por uma trava para não
+// entrar em cascata quando várias chamadas falharem juntas.
+async function reentrar () {
+  if (estado.reentrando) return
+  estado.reentrando = true
+  pararTemporizadores()
+  estado.enviando = false
+  const ok = await entrar()
+  estado.reentrando = false
+  if (ok) await desenhar()
 }
 
 const pendente = () => estado.questoes.find(q => !estado.respondidas.has(q.id))
@@ -60,6 +79,7 @@ async function responder (questao, escolha) {
       questaoId: questao.id, escolha, msParaResponder: Date.now() - estado.mostradaEm
     })
     // 425: chegou antes da trava do servidor. Redesenha a mesma questão.
+    if (SESSAO_PERDIDA.includes(r.status)) { await reentrar(); return }
     if (r.status === 425) { estado.enviando = false; desenhar(); return }
     if (r.ok || r.status === 409 || r.status === 400) estado.respondidas.add(questao.id)
   } catch {
@@ -137,6 +157,8 @@ function desenharQuestao (questao) {
   // Carimba a entrega de TODA questão: é o que arma a trava no servidor,
   // e no relâmpago é o que inicia o cronômetro.
   enviarJson('/api/entregar', { questaoId: questao.id })
+    .then(r => { if (SESSAO_PERDIDA.includes(r.status)) reentrar() })
+    .catch(() => { /* rede caiu; o participante tenta de novo ao responder */ })
 
   estado.mostradaEm = Date.now()
   if (travado) armarTrava()
@@ -219,6 +241,7 @@ async function desenhar () {
   if (estado.fase === 'revelado') {
     if (!estado.resultado) {
       const r = await fetch('/api/meu-resultado')
+      if (SESSAO_PERDIDA.includes(r.status)) { reentrar(); return }
       if (!r.ok) { tela.innerHTML = '<div class="campo navy" style="flex:1"></div>'; return }
       estado.resultado = await r.json()
     }
@@ -246,6 +269,8 @@ function ouvirEstado () {
   const fonte = new EventSource('/stream')
   fonte.addEventListener('estado', evento => {
     const d = JSON.parse(evento.data)
+    // Rodada trocada: as questões em memória são de outra rodada. Reinscrever.
+    if (estado.rodada !== null && d.rodada !== estado.rodada) { reentrar(); return }
     const mudou = d.fase !== estado.fase
     estado.fase = d.fase
     estado.segundosRelampago = d.segundosRelampago

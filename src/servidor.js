@@ -27,6 +27,9 @@ const PING_MS = 25_000
 // acrescentado aqui, o teste de vazamento quebra — de propósito.
 export function payloadDoParticipante (rodada) {
   return {
+    // O id permite ao cliente perceber que a rodada trocou (host zerou ou
+    // criou outra) e se reinscrever, em vez de insistir numa sessão órfã.
+    rodada: rodada.id,
     fase: rodada.fase,
     segundosRelampago: rodada.segundos_relampago,
     segundosTrava: rodada.segundos_trava
@@ -119,6 +122,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       .all(participante.id).map(l => l.questao_id)
 
     return {
+      rodada: rodada.id,
       rotulo: participante.rotulo,
       fase: rodada.fase,
       segundosRelampago: rodada.segundos_relampago,

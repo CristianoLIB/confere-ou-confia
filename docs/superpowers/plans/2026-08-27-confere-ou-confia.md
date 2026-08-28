@@ -3747,3 +3747,22 @@ Implementado depois do plano original, sob demanda:
 - **`questoes.html` / `questoes.js`** — a página de gestão.
 - **Mobile** — `100dvh` + `overflow: hidden` no corpo do quiz; o enunciado
   rola sozinho se precisar.
+
+## Correção (2026-08-28): sessão órfã prendia o participante
+
+**Sintoma:** participante preso na mesma questão, qualquer resposta.
+
+**Causa raiz:** zerar a rodada (ou criar outra) apaga os participantes. A aba
+aberta continua com o cookie `pt`, que já não corresponde a ninguém na rodada
+atual — o servidor devolve 401 em `/api/entregar` e `/api/responder`. O cliente
+tratava só 425/409/400/ok, então o 401 caía no ramo que apenas redesenha: a
+questão nunca entrava em `respondidas` e `pendente()` devolvia sempre a mesma.
+
+**Correção:** `payloadDoParticipante` passa a carregar `rodada: rodada.id`, e o
+cliente ganha `reentrar()` — dispara ao ver um id de rodada diferente no SSE ou
+ao receber 401/503, refazendo a inscrição e redesenhando. Trava `reentrando`
+evita cascata quando várias chamadas falham juntas.
+
+**Reproduzido** com Playwright antes da correção (401 nos dois endpoints, tela
+presa) e **verificado depois** nos dois caminhos: zerar a rodada e criar rodada
+nova, ambos com a aba aberta.

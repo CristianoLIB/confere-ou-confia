@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { abrirBanco } from '../src/db.js'
 import { criarServidor, payloadDoParticipante } from '../src/servidor.js'
-import { criarRodada, definirFase } from '../src/rodada.js'
+import { criarRodada, definirFase, zerarRodada } from '../src/rodada.js'
 
 const CHAVE = 'chave-de-teste'
 
@@ -57,10 +57,11 @@ test('VAZAMENTO: a resposta de entrar não contém gabarito nem explicação', a
 
 test('VAZAMENTO: o payload do canal do participante só carrega fase e cronômetro', () => {
   const payload = payloadDoParticipante({
-    id: 1, fase: 'respondendo', segundos_relampago: 10, segundos_trava: 4, passo_debrief: 3,
+    id: 7, fase: 'respondendo', segundos_relampago: 10, segundos_trava: 4, passo_debrief: 3,
     previsao_participantes: 45, num_questoes_ativas: 10
   })
-  assert.deepEqual(Object.keys(payload).sort(), ['fase', 'segundosRelampago', 'segundosTrava'])
+  assert.deepEqual(Object.keys(payload).sort(), ['fase', 'rodada', 'segundosRelampago', 'segundosTrava'])
+  assert.equal(payload.rodada, 7, 'o cliente precisa perceber quando a rodada trocou')
 })
 
 test('VAZAMENTO: responder não diz se acertou', async () => {
@@ -329,4 +330,49 @@ test('encerrar para todos: fase encerrado bloqueia entrada nova e o participante
   const volta = await entrar(a, `pt=${cookie.value}`)
   assert.equal(volta.status, 200, 'quem já estava dentro retoma')
   assert.equal(volta.corpo.fase, 'encerrado')
+})
+
+// ---------- sessão órfã: o ensaio que quebrava o participante ----------
+
+test('SESSÃO ÓRFÃ: zerar a rodada faz o participante aberto receber 401', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  const cabecalhos = { cookie: `pt=${cookie.value}` }
+  const questaoId = corpo.questoes[0].id
+
+  zerarRodada(db, rodada.id)
+  definirFase(db, rodada.id, 'respondendo')
+
+  for (const url of ['/api/entregar', '/api/responder']) {
+    const r = await a.inject({ method: 'POST', url, headers: cabecalhos, payload: { questaoId, escolha: 'busca' } })
+    assert.equal(r.statusCode, 401, `${url} devolve 401 com sessão órfã`)
+  }
+})
+
+test('SESSÃO ÓRFÃ: entrar de novo com o mesmo cookie recupera a sessão', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const primeira = await entrar(a)
+  zerarRodada(db, rodada.id)
+  definirFase(db, rodada.id, 'respondendo')
+
+  const volta = await entrar(a, `pt=${primeira.cookie.value}`)
+  assert.equal(volta.status, 200, 'reentrar é o caminho de recuperação do cliente')
+  assert.equal(volta.corpo.questoes.length, 5)
+  assert.deepEqual(volta.corpo.jaRespondidas, [], 'participante novo, placar limpo')
+  assert.equal(volta.corpo.rotulo, 'Participante #1')
+})
+
+test('SESSÃO ÓRFÃ: criar uma rodada nova também troca o id que o cliente observa', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const antes = await entrar(a)
+  assert.equal(antes.corpo.rodada, rodada.id)
+
+  const nova = criarRodada(db, { previsaoParticipantes: 20 })
+  definirFase(db, nova.id, 'respondendo')
+  const depois = await entrar(a, `pt=${antes.cookie.value}`)
+  assert.equal(depois.corpo.rodada, nova.id, 'o cliente precisa ver que mudou de rodada')
+  assert.notEqual(nova.id, rodada.id)
 })

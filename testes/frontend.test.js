@@ -77,6 +77,15 @@ test('os títulos do quiz têm tamanho fluido: palavra larga não vaza em tela e
   assert.match(ler('comum.css'), /\.disp\s*\{[^}]*overflow-wrap:\s*anywhere/, 'a rede de segurança precisa existir')
 })
 
+test('o quiz se recupera de sessão órfã em vez de repetir a mesma questão', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /function reentrar/, 'precisa existir um caminho de reentrada')
+  // 401 (sessão órfã) e 503 (rodada trocada/ausente) não podem cair no ramo
+  // que apenas redesenha: isso é o loop infinito.
+  assert.match(fonte, /401/, 'o 401 precisa ser tratado explicitamente')
+  assert.match(fonte, /estado\.rodada/, 'o cliente precisa acompanhar qual rodada está observando')
+})
+
 test('o botão travado perde o relevo', () => {
   const css = ler('comum.css')
   const travado = css.match(/\.opcao:disabled\s*\{[^}]*\}/)
