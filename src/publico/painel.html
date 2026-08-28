@@ -71,8 +71,13 @@
   </section>
 
   <section class="campo navy" style="flex: 1; justify-content: flex-end">
-    <div class="etiq" style="color: var(--lilas)">Ensaio</div>
+    <div class="etiq" style="color: var(--lilas)">Encerrar a sessão</div>
+    <p style="font-size: 14px; color: var(--lilas-claro); margin: 10px 0 0; line-height: 1.5">
+      <strong style="color: var(--branco)">Arquivar</strong> guarda esta sessão no histórico e abre uma nova igual.
+      <strong style="color: var(--laranja)">Zerar</strong> apaga as respostas desta sessão — use só depois de um ensaio.
+    </p>
     <div class="fileira" style="margin-top: 18px">
+      <button id="arquivar" class="acao principal">Arquivar e abrir nova</button>
       <button id="zerar" class="acao fantasma">Zerar rodada</button>
       <a href="#" id="linkTelao" target="_blank"><button class="acao">Abrir telão</button></a>
       <a href="#" id="linkQuestoes"><button class="acao">Gerenciar questões</button></a>

@@ -1,4 +1,6 @@
 // questoes.js — gestão do banco de questões
+import { confirmar, avisar } from '/modal.js'
+
 const chave = new URLSearchParams(location.search).get('k') ?? ''
 const $ = id => document.getElementById(id)
 const comChave = rota => `${rota}${rota.includes('?') ? '&' : '?'}k=${encodeURIComponent(chave)}`
@@ -103,7 +105,17 @@ $('form').addEventListener('submit', async evento => {
 })
 
 $('apagar').addEventListener('click', async () => {
-  if (!selecionada || !confirm(`Apagar ${selecionada}? Não dá para desfazer.`)) return
+  if (!selecionada) return
+  const q = lista.find(x => x.id === selecionada)
+  const ok = await confirmar({
+    titulo: `Apagar a questão ${selecionada}?`,
+    texto: q?.texto ?? '',
+    detalhe: 'Isto não tem volta. Se ela já foi usada numa rodada, desative em vez de apagar.',
+    rotuloConfirmar: 'Apagar',
+    perigo: true,
+    digitar: selecionada
+  })
+  if (!ok) return
   const { ok, corpo } = await chamar(`/api/painel/questoes/${encodeURIComponent(selecionada)}`, { method: 'DELETE' })
   if (!ok) {
     retorno(corpo?.motivo === 'em_uso'
@@ -123,7 +135,13 @@ $('arquivo').addEventListener('change', async () => {
   if (!arquivo) return
   const texto = await arquivo.text()
   $('arquivo').value = ''
-  if (!confirm(`Importar ${arquivo.name}? Questões com id já existente serão atualizadas.`)) return
+  const ok = await confirmar({
+    titulo: `Importar ${arquivo.name}?`,
+    texto: 'Questões com id já existente serão atualizadas; as demais entram como novas.',
+    detalhe: 'Se qualquer linha estiver inválida, nada é importado.',
+    rotuloConfirmar: 'Importar'
+  })
+  if (!ok) return
   const { ok, corpo } = await chamar('/api/painel/questoes/importar', { method: 'POST', headers: { 'content-type': 'text/csv' }, body: texto })
   if (!ok) {
     const linhas = (corpo?.erros ?? []).map(e => `${e.linha ? `linha ${e.linha}: ` : ''}${e.erros.join('; ')}`)

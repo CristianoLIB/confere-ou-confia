@@ -241,6 +241,22 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     return { ok: true }
   })
 
+  // Arquivar é o oposto de zerar: encerra a sessão atual preservando tudo e
+  // abre uma nova com os mesmos parâmetros, pronta para a próxima turma.
+  app.post('/api/painel/arquivar', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    const atual = exigirRodada(reply); if (!atual) return
+    definirFase(db, atual.id, 'encerrado')
+    const nova = criarRodada(db, {
+      previsaoParticipantes: atual.previsao_participantes,
+      numQuestoesAtivas: atual.num_questoes_ativas,
+      segundosRelampago: atual.segundos_relampago,
+      segundosTrava: atual.segundos_trava
+    })
+    emitirParticipantes(); emitirPainel()
+    return { arquivada: atual.id, nova: nova.id, numQuestoesAtivas: nova.num_questoes_ativas }
+  })
+
   app.post('/api/painel/zerar', (req, reply) => {
     if (!exigirChave(req, reply)) return
     const rodada = exigirRodada(reply); if (!rodada) return

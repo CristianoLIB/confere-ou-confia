@@ -256,3 +256,51 @@ test('a legenda do placar fica junto da porcentagem, no mesmo campo', () => {
   const campoHeroi = tela.slice(tela.indexOf('t-heroi'), tela.indexOf('</div>', tela.indexOf('t-legenda-heroi')))
   assert.match(campoHeroi, /t-legenda-heroi/, 'a frase precisa estar no mesmo campo da porcentagem')
 })
+
+// ---------- diálogos padronizados ----------
+
+test('nenhuma tela usa confirm() ou alert() do navegador', () => {
+  for (const arquivo of ['painel.js', 'questoes.js', 'historico.js', 'quiz.js', 'telao.js']) {
+    const fonte = ler(arquivo)
+    assert.ok(!/(^|[^.\w])confirm\s*\(/.test(fonte), `${arquivo} ainda usa confirm() nativo`)
+    assert.ok(!/(^|[^.\w])alert\s*\(/.test(fonte), `${arquivo} ainda usa alert() nativo`)
+  }
+})
+
+test('o modal compartilhado existe e é usado pelas telas de administração', () => {
+  const modal = ler('modal.js')
+  assert.match(modal, /export function confirmar/)
+  assert.match(modal, /export function avisar/)
+  assert.match(modal, /showModal/, 'usa <dialog> nativo, que já trata foco e Escape')
+  for (const arquivo of ['painel.js', 'questoes.js']) {
+    assert.match(ler(arquivo), /from '\/modal\.js'/, `${arquivo} não importa o modal`)
+  }
+})
+
+test('o modal escapa o conteúdo que injeta', () => {
+  assert.match(ler('modal.js'), /const escapar/, 'títulos e textos vêm de dados, precisam ser escapados')
+})
+
+// ---------- arquivar e o gate do zerar ----------
+
+test('o painel oferece arquivar e explica a diferença para zerar', () => {
+  assert.match(ler('painel.html'), /Arquivar e abrir nova/)
+  assert.match(ler('painel.html'), /guarda esta sessão no histórico/)
+  assert.match(ler('painel.js'), /\/api\/painel\/arquivar/)
+})
+
+test('zerar com gente dentro exige digitar para liberar', () => {
+  const fonte = ler('painel.js')
+  const bloco = fonte.slice(fonte.indexOf("$('zerar')"))
+  assert.match(bloco, /digitar: 'ZERAR'/, 'o caminho sem volta precisa do gate de digitação')
+  assert.match(bloco, /perigo: true/)
+  assert.match(bloco, /não tem volta/)
+  assert.match(bloco, /use Arquivar/, 'o modal precisa apontar a alternativa não destrutiva')
+})
+
+test('apagar questão também passa pelo gate de digitação', () => {
+  const fonte = ler('questoes.js')
+  const bloco = fonte.slice(fonte.indexOf("$('apagar')"))
+  assert.match(bloco, /digitar: selecionada/)
+  assert.match(bloco, /perigo: true/)
+})

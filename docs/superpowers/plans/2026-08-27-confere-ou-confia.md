@@ -3783,3 +3783,18 @@ nova, ambos com a aba aberta.
   barras e numerais grandes; fechamento com o agradecimento centralizado.
 - **Verificação**: percorridos os 7 passos em 1280×720 medindo transbordamento
   real dos campos — zero cortes depois do ajuste.
+
+## Adendo (2026-08-28): arquivar, gate no zerar e diálogos próprios
+
+- **`POST /api/painel/arquivar`**: encerra a rodada atual e cria uma nova
+  herdando previsão, questões ativas, cronômetro e trava. O oposto de zerar.
+- **Gate no zerar**: com participantes, o diálogo é vermelho, lista quantas
+  pessoas e decisões se perdem, aponta o Arquivar e exige digitar `ZERAR`. Sem
+  participantes, confirmação simples — não há o que perder.
+- **`src/publico/modal.js`**: `confirmar()` e `avisar()` sobre `<dialog>`
+  nativo. Substituem todo `confirm()`/`alert()` do painel e da gestão de
+  questões; um teste falha se algum voltar. Apagar questão também ganhou gate
+  de digitação (o próprio id).
+- **Verificado no navegador**: o gate só libera com `ZERAR` exato (`zerar`,
+  `ZERA`, `ZERARX` não passam), cancelar preserva os dados, e arquivar move a
+  sessão para o histórico deixando a nova vazia em espera.

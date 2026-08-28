@@ -114,7 +114,12 @@ URL protegida por chave. Ações:
 - **Encerrar para todos** (`→ encerrado`): quem está no quiz vê "Dinâmica
   encerrada", ninguém novo entra, o telão fixa o fechamento. Diferente de
   fechar entradas, que só barra gente nova.
-- Zerar a rodada (para ensaiar antes e limpar).
+- **Arquivar**: encerra a sessão atual preservando-a no histórico e abre uma
+  nova com os mesmos parâmetros. É o caminho normal entre turmas.
+- **Zerar**: apaga as respostas da sessão atual. É o único caminho sem volta do
+  sistema, e por isso exige digitar `ZERAR` no diálogo, que mostra antes quantas
+  pessoas e decisões se perdem e aponta o Arquivar como alternativa. Existe para
+  limpar depois do ensaio.
 - Link para a **gestão de questões** (§3.6).
 
 Telão e painel são URLs separadas de propósito: se os botões estivessem na tela
@@ -141,9 +146,17 @@ abrir uma sessão, mostra os mesmos agregados do telão — categorias, armadilh
 e o A/B do relâmpago. O topo soma tudo: quantas sessões, quantas pessoas,
 percentual geral.
 
-Uma ressalva que a própria tela diz: **zerar uma rodada apaga o histórico
-dela**. Zerar existe para o ensaio; criar uma rodada nova preserva as
-anteriores.
+Zerar apaga **somente a sessão atual** — as anteriores, o banco de questões e a
+própria rodada continuam. A sessão zerada some do histórico porque a listagem
+mostra só rodadas com participantes. Para guardar, use Arquivar.
+
+### 3.8 Diálogos
+
+Nenhuma tela usa `confirm()` ou `alert()` do navegador: eles ignoram a
+identidade visual e não permitem gate de digitação. `modal.js` oferece
+`confirmar()` e `avisar()` sobre `<dialog>` nativo, que já trata foco, Escape e
+camada. Toda confirmação mostra o que está em jogo em números; as destrutivas
+vêm em laranja e exigem digitar a palavra.
 
 ### 3.6 Gestão de questões
 
@@ -412,6 +425,7 @@ questão, já que uma resposta recusada nunca entrava na lista de respondidas.
 | `POST /api/painel/debrief` | avança o passo do debrief |
 | `POST /api/painel/zerar` | limpa a rodada |
 | `GET /stream/painel` (SSE) | agregados completos |
+| `POST /api/painel/arquivar` | encerra a sessão atual e abre uma nova igual |
 | `GET /api/painel/sessoes`, `GET /api/painel/sessoes/:id` | histórico de sessões |
 | `GET/POST /api/painel/questoes`, `PUT/DELETE /api/painel/questoes/:id` | gestão de questões |
 | `GET /api/painel/questoes.csv`, `POST /api/painel/questoes/importar` | exportar e importar CSV |

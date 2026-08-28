@@ -179,3 +179,23 @@ input[type="number"] {
 textarea { resize: vertical; min-height: 96px; line-height: 1.45; }
 label { display: flex; flex-direction: column; gap: 9px; }
 label .etiq { color: var(--lilas); }
+
+/* Diálogos do sistema. Mesma linguagem do resto: campo chapado, sem canto
+   arredondado, relevo de aresta dura. */
+dialog#modal {
+  border: none; padding: 0; max-width: 520px; width: calc(100vw - 32px);
+  background: var(--navy); color: var(--branco);
+  box-shadow: 10px 10px 0 var(--navy-escuro);
+}
+dialog#modal::backdrop { background: rgba(13, 11, 35, .82); }
+dialog#modal form { padding: 26px; display: flex; flex-direction: column; gap: 14px; }
+dialog#modal .modal-etiq { color: var(--lilas); }
+dialog#modal.perigo .modal-etiq { color: var(--laranja); }
+dialog#modal h2 { font-size: 27px; margin: 0; }
+dialog#modal p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--lilas-claro); }
+dialog#modal .modal-detalhe { color: var(--laranja); font-weight: 600; }
+dialog#modal .modal-gate { gap: 8px; margin-top: 4px; }
+dialog#modal .modal-gate input { width: 100%; font-size: 17px; }
+dialog#modal .modal-gate strong { color: var(--laranja); letter-spacing: .1em; }
+dialog#modal .modal-acoes { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+dialog#modal .modal-acoes .acao { font-size: 14px; padding: 13px 18px; }

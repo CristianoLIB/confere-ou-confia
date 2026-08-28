@@ -470,3 +470,58 @@ test('SESSÃO ÓRFÃ: criar uma rodada nova também troca o id que o cliente obs
   assert.equal(depois.corpo.rodada, nova.id, 'o cliente precisa ver que mudou de rodada')
   assert.notEqual(nova.id, rodada.id)
 })
+
+// ---------- arquivar ----------
+
+test('arquivar exige a chave', async () => {
+  const { app: a } = montarApp()
+  assert.equal((await a.inject({ method: 'POST', url: '/api/painel/arquivar' })).statusCode, 401)
+})
+
+test('ARQUIVAR preserva a sessão no histórico e abre uma nova igual', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+
+  const r = await a.inject({ method: 'POST', url: comChave('/api/painel/arquivar') })
+  assert.equal(r.statusCode, 200)
+  const { arquivada, nova } = r.json()
+  assert.equal(arquivada, rodada.id)
+  assert.notEqual(nova, rodada.id)
+
+  // A antiga continua inteira e visível no histórico.
+  const antiga = db.prepare('SELECT * FROM rodada WHERE id = ?').get(arquivada)
+  assert.equal(antiga.fase, 'encerrado')
+  const sessoes = (await a.inject({ url: comChave('/api/painel/sessoes') })).json()
+  assert.ok(sessoes.some(x => x.id === arquivada && x.decisoes === 4))
+
+  // A nova herda os parâmetros e começa vazia.
+  const atual = db.prepare('SELECT * FROM rodada WHERE id = ?').get(nova)
+  assert.equal(atual.previsao_participantes, antiga.previsao_participantes)
+  assert.equal(atual.segundos_trava, antiga.segundos_trava)
+  assert.equal(atual.fase, 'espera')
+  assert.equal((await a.inject({ url: comChave('/api/painel/estado') })).json().conectados, 0)
+})
+
+test('ZERAR apaga só a sessão atual: as anteriores continuam no histórico', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const primeira = await entrar(a)
+  await responderTudo(a, primeira.cookie, primeira.corpo.questoes)
+
+  // Arquiva e monta uma segunda sessão.
+  const { nova } = (await a.inject({ method: 'POST', url: comChave('/api/painel/arquivar') })).json()
+  definirFase(db, nova, 'respondendo')
+  const segunda = await entrar(a, 'pt=outro-token')
+  await responderTudo(a, segunda.cookie, segunda.corpo.questoes)
+
+  const questoesAntes = db.prepare('SELECT COUNT(*) c FROM questao').get().c
+  await a.inject({ method: 'POST', url: comChave('/api/painel/zerar') })
+
+  const sessoes = (await a.inject({ url: comChave('/api/painel/sessoes') })).json()
+  assert.ok(sessoes.some(x => x.id === rodada.id), 'a sessão arquivada sobrevive ao zerar')
+  assert.ok(!sessoes.some(x => x.id === nova), 'a sessão zerada sai do histórico')
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM rodada').get().c, 2, 'nenhuma rodada é removida')
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM questao').get().c, questoesAntes, 'o banco de questões não é tocado')
+})
