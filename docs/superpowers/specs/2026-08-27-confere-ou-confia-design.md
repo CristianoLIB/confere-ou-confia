@@ -61,23 +61,27 @@ Restrições do contexto:
    avisa — *"leia a situação · os botões liberam em 3s"* — com uma linha que
    preenche. Enquanto travados, os botões perdem o relevo e ficam apagados.
 5. **Nenhum feedback durante o quiz.** Ao terminar as quatro, uma **tela de
-   preparação**: *"Mais uma, e acabou"* e um botão **Estou pronto**. Quem está
-   no grupo do cronômetro lê ali que a próxima tem 10 segundos; para o outro
-   grupo a tela não menciona tempo nenhum.
-6. **Todos** recebem então a **pergunta relâmpago** — a mesma pergunta para o
+   preparação**: *"Mais uma, e acabou"*, com uma contagem que **avança sozinha**
+   (5s por padrão). Depender do clique fazia cada um chegar ao relâmpago num
+   momento diferente. Quem está no grupo do cronômetro lê ali que a próxima tem
+   10 segundos; para o outro grupo a tela não menciona tempo nenhum.
+6. Uma **chamada** cobre a tela por um instante anunciando o relâmpago — um raio
+   com clarão, só o clarão, ou nada, à escolha do painel. Ela toca **antes** de
+   a pergunta ser entregue: o cronômetro começa cheio, depois que ela sai.
+7. **Todos** recebem então a **pergunta relâmpago** — a mesma pergunta para o
    público inteiro. Só muda uma coisa: metade vê um cronômetro de 10s correndo,
    a outra metade não vê cronômetro nenhum. Ela usa outro eixo, o que dá nome à
    dinâmica: **Confio** / **Confiro**. Aqui **não há trava**: a tela de
    preparação já cumpriu esse papel, e comer 4 dos 10 segundos mataria a
    pergunta.
-7. Ao terminar: *"Respostas registradas. Ninguém sabe o resultado ainda. Nem
+8. Ao terminar: *"Respostas registradas. Ninguém sabe o resultado ainda. Nem
    você."*
-8. Quando você revela, a tela dela **não** mostra o placar: mostra *"o
+9. Quando você revela, a tela dela **não** mostra o placar: mostra *"o
    resultado da sala está saindo, o seu aparece aqui daqui a pouco"*. O placar
    pessoal só acende quando você chega ao **fechamento** do debrief. Revelar
    tudo de uma vez faria 50 pessoas olharem para o próprio celular no momento
    em que você começa a falar.
-9. Quando você encerra para todos, a tela vira "Dinâmica encerrada".
+10. Quando você encerra para todos, a tela vira "Dinâmica encerrada".
 
 No celular a tela **cabe na janela sem rolar**: a altura é a visível de
 verdade (`100dvh`, não `100vh`, que conta a área atrás da barra de endereço),
@@ -107,6 +111,10 @@ URL protegida por chave. Ações:
 
 - Criar rodada informando a **previsão de participantes**; o sistema sugere o
   número de questões ativas e você pode sobrescrever.
+- **Ajustar o ritmo com a rodada em andamento**, sem recriar nada: quanto tempo
+  os botões ficam travados, quantos segundos dura o aviso antes do relâmpago,
+  o cronômetro do relâmpago, e qual chamada anuncia a pergunta. Vale já na
+  próxima questão de quem está respondendo. O servidor limita os valores.
 - Abrir/fechar entradas.
 - Liberar o início (`espera` → `respondendo`).
 - **Revelar**.
@@ -266,6 +274,7 @@ rodada
   id, criada_em, previsao_participantes, num_questoes_ativas,
   fase TEXT CHECK (fase IN ('espera','respondendo','revelado','encerrado')),
   entradas_abertas INTEGER, segundos_relampago INTEGER, segundos_trava INTEGER,
+              segundos_preparacao INTEGER, animacao_relampago TEXT,
               passo_debrief INTEGER
 
 questao
@@ -353,7 +362,18 @@ Atribuído na entrada, **alternando por ordem de chegada** (par → `cronometro`
 Ambos os grupos recebem a mesma pergunta relâmpago; só o grupo `cronometro` vê
 a contagem regressiva.
 
-### 6.4 Trava de armação
+### 6.4 Ritmo e chamada
+
+Quatro ajustes vivem na rodada e podem mudar durante ela: `segundos_trava`
+(0-15), `segundos_preparacao` (0-30), `segundos_relampago` (3-120) e
+`animacao_relampago` (`raio`, `flash`, `nenhuma`). Os limites são aplicados no
+servidor, valendo para qualquer caminho — criar rodada ou ajustar ao vivo.
+
+Preparação de zero segundos pula a tela e vai direto para a chamada. Animação
+`nenhuma` entra direto na pergunta. A chamada respeita `prefers-reduced-motion`:
+quem pediu menos movimento vê o aviso estático, não a animação.
+
+### 6.5 Trava de armação
 
 Quando uma questão é entregue ao participante, o servidor carimba `entregue_em`
 na atribuição. Uma resposta que chegue **antes de `segundos_trava`** é recusada
@@ -370,7 +390,7 @@ instantaneamente.
 
 Padrão de 4 segundos, ajustável de 3 a 5 no painel.
 
-### 6.5 Validação do cronômetro
+### 6.6 Validação do cronômetro
 
 O servidor grava `entregue_em` ao servir a questão relâmpago. Ao receber a
 resposta, se `agora - entregue_em > segundos_relampago + 2s` (folga de rede), a
@@ -380,7 +400,7 @@ autoenvia `'expirou'` ao zerar.
 Estourar o tempo **não conta como erro**. Vira uma fatia própria no gráfico:
 sob pressão, não decidir também é resultado.
 
-### 6.6 Identidade e retomada
+### 6.7 Identidade e retomada
 
 Token anônimo gerado no primeiro acesso, guardado em `localStorage` **e** em
 cookie. Reabrir a página **retoma** a mesma sessão — não cria participante novo,
@@ -425,6 +445,7 @@ questão, já que uma resposta recusada nunca entrava na lista de respondidas.
 | `POST /api/painel/debrief` | avança o passo do debrief |
 | `POST /api/painel/zerar` | limpa a rodada |
 | `GET /stream/painel` (SSE) | agregados completos |
+| `POST /api/painel/ajustes` | muda o ritmo e a chamada da rodada em andamento |
 | `POST /api/painel/arquivar` | encerra a sessão atual e abre uma nova igual |
 | `GET /api/painel/sessoes`, `GET /api/painel/sessoes/:id` | histórico de sessões |
 | `GET/POST /api/painel/questoes`, `PUT/DELETE /api/painel/questoes/:id` | gestão de questões |

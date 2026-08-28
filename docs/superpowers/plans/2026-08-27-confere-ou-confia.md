@@ -3798,3 +3798,18 @@ nova, ambos com a aba aberta.
 - **Verificado no navegador**: o gate só libera com `ZERAR` exato (`zerar`,
   `ZERA`, `ZERARX` não passam), cancelar preserva os dados, e arquivar move a
   sessão para o histórico deixando a nova vazia em espera.
+
+## Adendo (2026-08-28): ritmo ajustável e chamada do relâmpago
+
+- **`segundos_preparacao` e `animacao_relampago`** na rodada, por `ALTER TABLE`
+  sem CHECK — o ALTER do SQLite não o aplicaria ao que já existe, então a
+  validação (`LIMITES` e `ANIMACOES` em `rodada.js`) vale para todo caminho.
+- **`POST /api/painel/ajustes`** muda trava, preparação, cronômetro e chamada
+  na rodada em andamento. `definirAjustes` aceita parciais: mexer num campo não
+  altera os outros.
+- **Preparação automática**: a tela conta e avança sozinha; o botão saiu. Zero
+  segundos pula a tela.
+- **Chamada**: overlay com raio SVG e clarão, ou só o clarão, ou nada. Toca
+  antes do `/api/entregar`, então o cronômetro começa cheio — verificado no
+  navegador: durante a chamada o mostrador está vazio, e marca 10s ao sair.
+  `prefers-reduced-motion` recebe o aviso estático.
