@@ -157,6 +157,20 @@ test('com as entradas fechadas, entrar devolve 403', async () => {
   assert.equal((await entrar(a)).status, 403)
 })
 
+test('/qr.svg devolve um SVG apontando para o quiz no host do pedido', async () => {
+  const { app: a } = montarApp()
+  const r = await a.inject({ url: '/qr.svg', headers: { host: 'rtquiz.libtools.online', 'x-forwarded-proto': 'https' } })
+  assert.equal(r.statusCode, 200)
+  assert.match(r.headers['content-type'], /image\/svg\+xml/)
+  assert.match(r.body, /^<svg/)
+  assert.match(r.headers['cache-control'], /max-age/)
+})
+
+test('/qr.svg não exige chave: é o participante que escaneia', async () => {
+  const { app: a } = montarApp()
+  assert.equal((await a.inject({ url: '/qr.svg' })).statusCode, 200)
+})
+
 test('o canal do participante devolve content-type de event-stream', async () => {
   const { app: a } = montarApp()
   const r = await a.inject({ url: '/stream', payloadAsStream: true })

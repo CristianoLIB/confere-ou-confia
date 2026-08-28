@@ -30,3 +30,8 @@ body { overflow: hidden; }
 .trilho.solo   { height: clamp(28px, 3.4vw, 44px); }
 
 .regra { border-left: 3px solid var(--laranja); padding-left: clamp(14px, 1.6vw, 20px); }
+
+/* O QR é a coisa que precisa ser escaneada de um compartilhamento de Zoom:
+   quadrado, fundo branco chapado, e tão grande quanto o campo permitir. */
+.qr { display: block; flex: 1 1 auto; min-height: 0; width: auto; max-width: 100%;
+      aspect-ratio: 1; background: var(--branco); margin: clamp(12px, 2vh, 24px) 0; }

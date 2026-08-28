@@ -131,6 +131,13 @@ test('barra sem dado nenhum não vira NaN', () => {
   assert.deepEqual(larguraSegmentos([{ valor: 0 }, { valor: 0 }]), [0, 0])
 })
 
+test('a sala de espera do telão mostra o QR junto com a URL', () => {
+  const fonte = ler('telao.js')
+  const espera = fonte.slice(fonte.indexOf('const telaEspera'), fonte.indexOf('const telaRespondendo'))
+  assert.match(espera, /\/qr\.svg/, 'o QR precisa estar na tela de espera')
+  assert.match(espera, /location\.host/, 'a URL escrita continua ao lado do QR')
+})
+
 test('o telão não embute a chave do painel no código', () => {
   const fonte = ler('telao.js') + ler('telao.html')
   assert.ok(!/ADMIN_KEY|chave-de-teste/.test(fonte), 'a chave deve vir da URL, nunca embutida')

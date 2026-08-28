@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import fastifyStatic from '@fastify/static'
 import fastifyCookie from '@fastify/cookie'
 import fs from 'node:fs'
+import QRCode from 'qrcode'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
@@ -40,6 +41,19 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   app.get('/distribuicao-cliente.js', (req, reply) => {
     reply.type('application/javascript')
     return fs.readFileSync(path.join(PASTA_SRC, 'distribuicao.js'), 'utf8')
+  })
+
+  // QR do link do quiz, para quem preferir o celular. Aponta para o host do
+  // próprio pedido: local vira localhost, no VPS vira rtquiz.libtools.online.
+  app.get('/qr.svg', async (req, reply) => {
+    const proto = req.headers['x-forwarded-proto'] ?? req.protocol ?? 'https'
+    const url = `${proto}://${req.headers.host}/quiz.html`
+    const svg = await QRCode.toString(url, {
+      type: 'svg', margin: 1, errorCorrectionLevel: 'M',
+      color: { dark: '#1d1846', light: '#ffffff' }
+    })
+    reply.type('image/svg+xml').header('cache-control', 'public, max-age=3600')
+    return svg
   })
 
   const canais = { participantes: criarCanal(), painel: criarCanal() }

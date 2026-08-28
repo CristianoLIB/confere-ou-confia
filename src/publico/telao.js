@@ -59,16 +59,14 @@ const telaEspera = ag => `
   <div class="campo navy" style="grid-column:1/8; grid-row:2/5; justify-content:flex-end">
     <h1 class="disp t-titulo">Confere<br><span style="color:var(--laranja)">ou</span> confia?</h1>
   </div>
-  <div class="campo laranja" style="grid-column:8/13; grid-row:2/5; justify-content:space-between">
-    <div class="etiq">O link está no chat</div>
-    <div class="disp t-subtitulo" style="text-transform:none">${escapar(location.host)}</div>
-  </div>
   <div class="campo branco" style="grid-column:1/8; grid-row:5/8; justify-content:flex-end">
     <div class="num t-numero">${ag.conectados}</div>
     <div class="etiq" style="margin-top:14px; color:var(--texto-claro)">conectados</div>
   </div>
-  <div class="campo teal" style="grid-column:8/13; grid-row:5/8; justify-content:flex-end">
-    <div class="disp t-subtitulo">Quatro<br>situações.<br>Duas saídas.</div>
+  <div class="campo laranja" style="grid-column:8/13; grid-row:2/8; justify-content:space-between; align-items:flex-start">
+    <div class="etiq">O link está no chat — ou aponte o celular</div>
+    <img class="qr" src="/qr.svg" alt="QR code do link do quiz">
+    <div class="disp t-subtitulo" style="text-transform:none; word-break:break-all">${escapar(location.host)}</div>
   </div>`
 
 const telaRespondendo = ag => `
