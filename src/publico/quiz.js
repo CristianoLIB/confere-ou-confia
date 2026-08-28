@@ -81,7 +81,7 @@ function armarTrava () {
   const passo = () => {
     const falta = Math.max(0, total - (Date.now() - inicio))
     linha.style.width = `${((total - falta) / total) * 100}%`
-    faixa.textContent = `Leia a situação · os botões liberam em ${Math.ceil(falta / 1000)}s`
+    faixa.textContent = `Leia a situação · liberam em ${Math.ceil(falta / 1000)}s`
     if (falta === 0) {
       pararTemporizadores()
       faixa.parentElement.remove()
@@ -121,7 +121,7 @@ function desenharQuestao (questao) {
       botao('redacao', CANETA, '#169194', 'Redação', 'a IA resolve', travado)
 
   tela.innerHTML = `
-    ${comTempo ? '<div class="campo branco" id="faixaTempo" style="flex-direction:row; align-items:baseline; justify-content:space-between; padding-top:14px; padding-bottom:14px"><span class="etiq">tempo</span><span class="num" id="conta" style="font-size:46px"></span></div>' : ''}
+    ${comTempo ? '<div class="campo branco" id="faixaTempo" style="flex-direction:row; align-items:baseline; justify-content:space-between; padding-top:14px; padding-bottom:14px"><span class="etiq">tempo</span><span class="num num-l" id="conta"></span></div>' : ''}
     <div class="campo navy enunciado-caixa">
       <p class="enunciado">${escapar(questao.texto)}</p>
     </div>
@@ -149,12 +149,12 @@ function desenharPreparacao (relampago) {
   tela.innerHTML = `
     <div class="campo navy" style="flex:1; justify-content:flex-end">
       <div class="etiq" style="color:var(--lilas)">Última</div>
-      <div class="disp" style="font-size:52px; margin-top:14px">Mais<br>uma,<br><span style="color:var(--laranja)">e acabou.</span></div>
+      <div class="disp disp-xl" style="margin-top:14px">Mais<br>uma,<br><span style="color:var(--laranja)">e acabou.</span></div>
     </div>
     ${comCronometro ? `
     <div class="campo laranja" style="flex-direction:row; align-items:center; gap:14px">
       ${RELOGIO}
-      <span class="disp" style="font-size:21px">Esta tem ${estado.segundosRelampago} segundos.<br>Comece quando estiver pronto.</span>
+      <span class="disp disp-s">Esta tem ${estado.segundosRelampago} segundos.<br>Comece quando estiver pronto.</span>
     </div>` : ''}
     <div class="acoes"><div class="opcoes">
       <button class="opcao" id="pronto">
@@ -173,8 +173,8 @@ function desenharResultado () {
   const r = estado.resultado
   tela.innerHTML = `
     <div class="campo laranja" style="flex-direction:row; align-items:flex-end; justify-content:space-between; padding-top:30px; padding-bottom:26px">
-      <div class="disp" style="font-size:26px">Você<br>acertou</div>
-      <div class="num" style="font-size:108px">${r.acertos}<span style="font-size:46px">/${r.total}</span></div>
+      <div class="disp disp-m">Você<br>acertou</div>
+      <div class="num num-xl">${r.acertos}<span class="num-l">/${r.total}</span></div>
     </div>
     ${r.itens.map(i => `
       <div class="campo navy">
@@ -186,7 +186,7 @@ function desenharResultado () {
         <p style="font-size:14px; line-height:1.42; margin:0; color:var(--lilas)">${escapar(i.explicacao)}</p>
       </div>`).join('')}
     <div class="campo branco">
-      <div class="disp" style="font-size:24px">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
+      <div class="disp disp-m">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
     </div>`
 }
 
@@ -197,7 +197,7 @@ async function desenhar () {
   if (estado.fase === 'espera') {
     tela.innerHTML = `
       <div class="campo navy" style="flex:1; justify-content:flex-end">
-        <div class="disp" style="font-size:52px">Você<br>está<br><span style="color:var(--laranja)">dentro.</span></div>
+        <div class="disp disp-xl">Você<br>está<br><span style="color:var(--laranja)">dentro.</span></div>
         <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">${escapar(estado.rotulo)} · aguarde o início</p>
       </div>`
     return
@@ -207,11 +207,11 @@ async function desenhar () {
     marcador.textContent = 'Encerrado'
     tela.innerHTML = `
       <div class="campo navy" style="flex:1; justify-content:flex-end">
-        <div class="disp" style="font-size:52px">Dinâmica<br><span style="color:var(--laranja)">encerrada.</span></div>
+        <div class="disp disp-l">Dinâmica<br><span style="color:var(--laranja)">encerrada.</span></div>
         <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">Obrigado por participar.</p>
       </div>
       <div class="campo branco">
-        <div class="disp" style="font-size:24px">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
+        <div class="disp disp-m">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
       </div>`
     return
   }
@@ -230,7 +230,7 @@ async function desenhar () {
   if (!questao) {
     tela.innerHTML = `
       <div class="campo navy" style="flex:1; justify-content:flex-end">
-        <div class="disp" style="font-size:46px">Respostas<br>registradas.</div>
+        <div class="disp disp-l">Respostas<br>registradas.</div>
         <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">Ninguém sabe o resultado ainda. Nem você.</p>
       </div>
       <div class="campo teal etiq">aguarde a revelação</div>`

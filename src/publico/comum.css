@@ -43,7 +43,19 @@ a:hover { color: var(--laranja-2); }
   font-family: var(--display);
   font-variation-settings: 'wdth' 116, 'wght' 800;
   line-height: .95; letter-spacing: -.02em; text-transform: uppercase; margin: 0;
+  /* Rede de segurança: uma palavra maior que a tela quebra em vez de vazar. */
+  overflow-wrap: anywhere;
 }
+
+/* Tamanhos fluidos do quiz, dimensionados pela palavra mais longa de cada
+   tela em caixa alta expandida (~0,8em por letra). Em 320px de largura
+   sobram 288px; em 375px, 343px. */
+.disp-xl { font-size: clamp(34px, 13vw, 52px); }   /* "DENTRO." "ACABOU." */
+.disp-l  { font-size: clamp(26px, 9vw, 46px); }    /* "REGISTRADAS." "ENCERRADA." */
+.disp-m  { font-size: clamp(20px, 7vw, 26px); }    /* "OBRIGATÓRIO." */
+.disp-s  { font-size: clamp(17px, 5.6vw, 21px); }
+.num-xl  { font-size: clamp(72px, 28vw, 108px); }
+.num-l   { font-size: clamp(32px, 12vw, 46px); }
 .num {
   font-family: var(--display);
   font-variation-settings: 'wdth' 112, 'wght' 800;
@@ -107,6 +119,10 @@ a:hover { color: var(--laranja-2); }
 /* Tela estreita: tudo um pouco mais junto para caber sem rolar. */
 @media (max-width: 420px) {
   .campo { padding: 16px; }
+  /* O cabeçalho tem 44px fixos: o marcador da direita não pode quebrar linha. */
+  .cabeca { padding: 0 14px; font-size: 10px; letter-spacing: .1em; gap: 10px; }
+  .cabeca strong { white-space: nowrap; }
+  .cabeca > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .acoes { padding: 12px; gap: 10px; }
   .opcoes { gap: 10px; }
   .opcao { padding: 14px; gap: 12px; }

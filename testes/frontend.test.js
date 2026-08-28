@@ -70,6 +70,13 @@ test('a tela do participante cabe na janela do celular sem rolar', () => {
   assert.match(ler('quiz.js'), /enunciado-caixa/, 'o enunciado é quem rola, se precisar')
 })
 
+test('os títulos do quiz têm tamanho fluido: palavra larga não vaza em tela estreita', () => {
+  const fonte = ler('quiz.js')
+  const fixos = fonte.match(/class="(?:disp|num)"[^>]*style="[^"]*font-size:\d+px/g) ?? []
+  assert.deepEqual(fixos, [], 'título com font-size fixo em px: use disp-xl/l/m/s ou num-xl/l')
+  assert.match(ler('comum.css'), /\.disp\s*\{[^}]*overflow-wrap:\s*anywhere/, 'a rede de segurança precisa existir')
+})
+
 test('o botão travado perde o relevo', () => {
   const css = ler('comum.css')
   const travado = css.match(/\.opcao:disabled\s*\{[^}]*\}/)
