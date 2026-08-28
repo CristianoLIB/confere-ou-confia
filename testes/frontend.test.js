@@ -116,15 +116,26 @@ test('o fechamento do telão fala com quem está lendo', () => {
 
 test('a sala de espera explica a dinâmica antes de começar', () => {
   const fonte = ler('quiz.js')
-  const espera = fonte.slice(fonte.indexOf("estado.fase === 'espera'"), fonte.indexOf('const questao = pendente()'))
-  assert.match(espera, /Como vai ser/)
+  const espera = fonte.slice(fonte.indexOf("estado.fase === 'espera'"), fonte.indexOf("if (estado.resultadoLiberado)"))
   assert.match(espera, /class="passos"/)
-  assert.equal((espera.match(/<li>/g) ?? []).length, 3, 'três passos: curto o bastante para caber')
+  assert.equal((espera.match(/class="campo [^"]*passo"/g) ?? []).length, 3, 'três passos: curto o bastante para caber')
   // O tutorial diz o tempo real da trava, não um número inventado.
   assert.match(espera, /estado\.segundosTrava/)
   // A relâmpago não é anunciada antes: a chamada com o raio é a surpresa.
   assert.ok(!/relâmpago/i.test(espera), 'antecipar a relâmpago estraga o efeito e contamina o A/B')
-  assert.match(ler('comum.css'), /\.passos li::before/, 'os passos são numerados por CSS')
+})
+
+test('cada passo é um campo de cor que divide a altura, não uma lista num bloco só', () => {
+  const espera = ler('quiz.js')
+  for (const cor of ['branco', 'teal', 'laranja']) {
+    assert.match(espera, new RegExp(`campo ${cor} passo`), `falta o bloco ${cor}`)
+  }
+  const css = ler('comum.css')
+  assert.match(css, /\.passos \{[^}]*flex: 1 1 auto/, 'os passos ocupam o espaço que sobra')
+  assert.match(css, /\.passo\s+\{[^}]*flex: 1 1 0/, 'e dividem essa altura em partes iguais')
+  // No desktop viram uma fileira, senão os blocos ficam altos demais.
+  const largo = css.slice(css.indexOf('@media (min-width: 700px)'))
+  assert.match(largo, /\.passos \{ flex-direction: row/)
 })
 
 test('o QR fica na tela durante a dinâmica, para quem chega atrasado', () => {

@@ -275,22 +275,28 @@ async function desenhar () {
     // A espera é o único momento em que dá para explicar as regras sem
     // atrapalhar: durante as perguntas o cronômetro corre.
     const trava = estado.segundosTrava > 0
-      ? `Os botões liberam <strong>${estado.segundosTrava} segundos</strong> depois de cada situação aparecer. Dá tempo de ler com calma.`
+      ? `Os botões liberam <strong>${estado.segundosTrava} segundos</strong> depois. Dá tempo de ler com calma.`
       : 'Leia a situação inteira antes de decidir.'
     tela.innerHTML = `
       <div class="campo navy">
         <div class="disp disp-l">Você está<br><span style="color:var(--laranja)">dentro.</span></div>
-        <p style="font-size:15px; color:var(--lilas-claro); margin:16px 0 0; font-weight:500">${escapar(estado.rotulo)} · aguarde o início</p>
+        <p style="font-size:15px; color:var(--lilas-claro); margin:14px 0 0; font-weight:500">${escapar(estado.rotulo)} · aguarde o início</p>
       </div>
-      <div class="campo branco" style="flex:1; justify-content:center">
-        <div class="etiq" style="color:var(--texto-claro)">Como vai ser</div>
-        <ol class="passos">
-          <li><strong>Quatro situações</strong> do dia a dia, uma por vez.</li>
-          <li>Em cada uma você decide: <strong>buscar na fonte</strong> ou <strong>deixar com a IA</strong>?</li>
-          <li>${trava}</li>
-        </ol>
+      <div class="passos">
+        <div class="campo branco passo">
+          <span class="n">1</span>
+          <span class="t"><strong>Quatro situações</strong> do dia a dia, uma por vez.</span>
+        </div>
+        <div class="campo teal passo">
+          <span class="n">2</span>
+          <span class="t">Em cada uma: <strong>buscar na fonte</strong> ou <strong>deixar com a IA</strong>?</span>
+        </div>
+        <div class="campo laranja passo">
+          <span class="n">3</span>
+          <span class="t">${trava}</span>
+        </div>
       </div>
-      <div class="campo teal etiq">ninguém vê o resultado até o final</div>`
+      <div class="campo navy etiq" style="color:var(--lilas)">ninguém vê o resultado até o final</div>`
     return
   }
 

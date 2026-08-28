@@ -58,6 +58,9 @@ Restrições do contexto:
    três passos**: são quatro situações, a decisão é buscar na fonte ou deixar
    com a IA, e os botões liberam depois de N segundos (o valor real da rodada).
    É o único momento em que dá para explicar as regras sem cronômetro correndo.
+   Cada passo é um campo de cor — branco, teal, laranja — e os três dividem a
+   altura que sobra; no desktop viram uma fileira. Uma lista dentro de um bloco
+   só deixava metade da tela vazia no celular.
    A pergunta relâmpago **não é anunciada** ali: antecipá-la estragaria a
    chamada e daria tempo de a pessoa se preparar para o que o A/B quer medir.
 3. Quando você libera, responde **4 situações**, uma por tela, dois botões
