@@ -42,9 +42,9 @@ const cartao = (valor, nome, classe) => `
 function desenharLista () {
   $('lista').innerHTML = sessoes.map(s => `
     <button type="button" class="sessao${s.id === selecionada ? ' selecionada' : ''}" data-id="${s.id}">
-      <span class="quando">${quando(s.criada_em)}</span>
+      <span class="quando">${escapar(s.titulo)}</span>
       <span class="pct">${s.percentual}%</span>
-      <span class="sub">${s.participantes} pessoas · ${s.finalizados} concluíram · ${s.decisoes} decisões · ${s.num_questoes_ativas} questões</span>
+      <span class="sub">${quando(s.criada_em)} · ${s.participantes} pessoas · ${s.finalizados} concluíram · ${s.decisoes} decisões</span>
     </button>`).join('')
   for (const b of $('lista').querySelectorAll('.sessao')) {
     b.addEventListener('click', () => abrir(Number(b.dataset.id)))
@@ -61,7 +61,8 @@ async function abrir (id) {
   const rel = d.relampago
 
   $('detalhe').innerHTML = `
-    <h2>${quando(d.criadaEm)}</h2>
+    <h2>${escapar(d.titulo)}</h2>
+    <div class="etiq" style="color:var(--lilas); margin:-8px 0 16px">${quando(d.criadaEm)}</div>
     <div class="cartoes" style="margin-bottom:22px">
       ${cartao(`${d.placar.percentual}%`, 'de acerto', 'laranja')}
       ${cartao(d.finalizados, 'concluíram', 'branco')}

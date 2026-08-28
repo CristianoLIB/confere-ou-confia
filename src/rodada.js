@@ -5,6 +5,15 @@ import {
 
 const FASES = ['espera', 'respondendo', 'revelado', 'encerrado']
 export const ANIMACOES = ['raio', 'flash', 'nenhuma']
+export const TITULO_PADRAO = 'Confere ou Confia?'
+const TITULO_MAX = 60
+
+// O título é texto de tela em quatro lugares: aparar e limitar aqui evita
+// que um título gigante quebre o cabeçalho do telão.
+function arrumarTitulo (valor, padrao) {
+  const t = String(valor ?? '').trim().replace(/\s+/g, ' ')
+  return t ? t.slice(0, TITULO_MAX) : padrao
+}
 
 // Limites dos ajustes de ritmo. Validados aqui porque valem para todo caminho:
 // criar rodada, ajustar ao vivo, ou semear em teste.
@@ -29,8 +38,10 @@ export function criarRodada (db, {
   segundosTrava = 4,
   segundosPreparacao = 5,
   animacaoRelampago = 'raio',
+  titulo = TITULO_PADRAO,
   aleatorio = Math.random
 }) {
+  titulo = arrumarTitulo(titulo, TITULO_PADRAO)
   segundosRelampago = limitar('segundosRelampago', segundosRelampago, 10)
   segundosTrava = limitar('segundosTrava', segundosTrava, 4)
   segundosPreparacao = limitar('segundosPreparacao', segundosPreparacao, 5)
@@ -44,10 +55,11 @@ export function criarRodada (db, {
   return db.transaction(() => {
     const info = db.prepare(`
       INSERT INTO rodada (criada_em, previsao_participantes, num_questoes_ativas,
-                          segundos_relampago, segundos_trava, segundos_preparacao, animacao_relampago)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+                          segundos_relampago, segundos_trava, segundos_preparacao,
+                          animacao_relampago, titulo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(new Date().toISOString(), previsaoParticipantes, k, segundosRelampago,
-      segundosTrava, segundosPreparacao, animacaoRelampago)
+      segundosTrava, segundosPreparacao, animacaoRelampago, titulo)
     const inserir = db.prepare('INSERT INTO rodada_questao (rodada_id, questao_id) VALUES (?, ?)')
     for (const q of [...ativas, relampago]) inserir.run(info.lastInsertRowid, q.id)
     return db.prepare('SELECT * FROM rodada WHERE id = ?').get(info.lastInsertRowid)
@@ -158,11 +170,13 @@ export function definirAjustes (db, rodadaId, ajustes = {}) {
     segundos_relampago: 'segundosRelampago' in ajustes
       ? limitar('segundosRelampago', ajustes.segundosRelampago, atual.segundos_relampago) : atual.segundos_relampago,
     animacao_relampago: ANIMACOES.includes(ajustes.animacaoRelampago)
-      ? ajustes.animacaoRelampago : atual.animacao_relampago
+      ? ajustes.animacaoRelampago : atual.animacao_relampago,
+    titulo: 'titulo' in ajustes ? arrumarTitulo(ajustes.titulo, atual.titulo) : atual.titulo
   }
   db.prepare(`
     UPDATE rodada SET segundos_trava = @segundos_trava, segundos_preparacao = @segundos_preparacao,
-                      segundos_relampago = @segundos_relampago, animacao_relampago = @animacao_relampago
+                      segundos_relampago = @segundos_relampago, animacao_relampago = @animacao_relampago,
+                      titulo = @titulo
     WHERE id = ${rodadaId}
   `).run(novo)
   return db.prepare('SELECT * FROM rodada WHERE id = ?').get(rodadaId)

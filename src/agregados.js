@@ -6,7 +6,7 @@ const percentual = (parte, total) => (total === 0 ? 0 : Math.round((parte / tota
 // Uma linha por rodada que teve gente, da mais recente para a mais antiga.
 export function listarSessoes (db) {
   return db.prepare(`
-    SELECT ro.id, ro.criada_em, ro.previsao_participantes, ro.num_questoes_ativas, ro.fase,
+    SELECT ro.id, ro.criada_em, ro.titulo, ro.previsao_participantes, ro.num_questoes_ativas, ro.fase,
            COUNT(DISTINCT p.id) participantes,
            SUM(CASE WHEN p.finalizado_em IS NOT NULL THEN 1 ELSE 0 END) finalizados,
            (SELECT COUNT(*) FROM resposta r JOIN questao q ON q.id = r.questao_id

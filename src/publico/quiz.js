@@ -1,10 +1,12 @@
 // quiz.js — a tela do participante
 const tela = document.getElementById('tela')
 const marcador = document.getElementById('marcador')
+const cabecaTitulo = document.getElementById('titulo')
 
 const estado = {
   rodada: null, rotulo: '', fase: 'espera', resultadoLiberado: false,
   segundosTrava: 4, segundosRelampago: 10, segundosPreparacao: 5, animacaoRelampago: 'raio',
+  titulo: 'RTQuiz',
   questoes: [], respondidas: new Set(), enviando: false, preparado: false,
   mostradaEm: 0, cronometro: null, trava: null, preparo: null, resultado: null, reentrando: false
 }
@@ -45,6 +47,7 @@ async function entrar () {
     rodada: d.rodada, rotulo: d.rotulo, fase: d.fase, resultadoLiberado: d.resultadoLiberado,
     segundosTrava: d.segundosTrava, segundosRelampago: d.segundosRelampago,
     segundosPreparacao: d.segundosPreparacao, animacaoRelampago: d.animacaoRelampago,
+    titulo: d.titulo,
     questoes: d.questoes, respondidas: new Set(d.jaRespondidas),
     // Sessão nova: o que era da anterior não vale mais.
     preparado: false, resultado: null
@@ -251,6 +254,7 @@ function desenharResultado () {
 
 async function desenhar () {
   pararTemporizadores()
+  cabecaTitulo.textContent = estado.titulo || 'RTQuiz'
   marcador.textContent = estado.rotulo
 
   if (estado.fase === 'espera') {
@@ -330,6 +334,10 @@ function ouvirEstado () {
     estado.segundosTrava = d.segundosTrava
     estado.segundosPreparacao = d.segundosPreparacao
     estado.animacaoRelampago = d.animacaoRelampago
+    estado.titulo = d.titulo
+    // O cabeçalho pode acompanhar na hora: mexer nele não reinicia a trava
+    // nem o cronômetro, ao contrário de redesenhar a tela inteira.
+    cabecaTitulo.textContent = estado.titulo || 'RTQuiz'
     // Só redesenha na virada de fase: no meio de uma questão, redesenhar
     // reiniciaria a trava e o cronômetro.
     if (mudou) desenhar()

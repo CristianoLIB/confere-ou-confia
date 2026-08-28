@@ -58,12 +58,12 @@ test('VAZAMENTO: a resposta de entrar não contém gabarito nem explicação', a
 test('VAZAMENTO: o payload do canal do participante só carrega fase e cronômetro', () => {
   const payload = payloadDoParticipante({
     id: 7, fase: 'respondendo', segundos_relampago: 10, segundos_trava: 4,
-    segundos_preparacao: 5, animacao_relampago: 'raio', passo_debrief: 3,
+    segundos_preparacao: 5, animacao_relampago: 'raio', titulo: 'Buscar ou Redigir?', passo_debrief: 3,
     previsao_participantes: 45, num_questoes_ativas: 10
   })
   assert.deepEqual(Object.keys(payload).sort(),
     ['animacaoRelampago', 'fase', 'resultadoLiberado', 'rodada',
-     'segundosPreparacao', 'segundosRelampago', 'segundosTrava'])
+     'segundosPreparacao', 'segundosRelampago', 'segundosTrava', 'titulo'])
   assert.equal(payload.rodada, 7, 'o cliente precisa perceber quando a rodada trocou')
   assert.equal(payload.resultadoLiberado, false, 'o gate vem fechado por padrão')
 })
@@ -545,7 +545,8 @@ test('AJUSTES: mudam a rodada em andamento e chegam ao participante', async () =
   const r = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
     payload: { segundosTrava: 6, segundosPreparacao: 8, segundosRelampago: 15, animacaoRelampago: 'flash' } })
   assert.equal(r.statusCode, 200)
-  assert.deepEqual(r.json(), { segundosTrava: 6, segundosPreparacao: 8, segundosRelampago: 15, animacaoRelampago: 'flash' })
+  assert.deepEqual(r.json(), { segundosTrava: 6, segundosPreparacao: 8, segundosRelampago: 15,
+    animacaoRelampago: 'flash', titulo: 'Confere ou Confia?' })
 
   // Sem criar rodada nova: o mesmo participante já recebe o novo ritmo.
   const depois = await entrar(a, `pt=${antes.cookie.value}`)
@@ -559,7 +560,8 @@ test('AJUSTES: o servidor limita os valores e ignora animação inválida', asyn
   const { app: a } = montarApp()
   const r = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
     payload: { segundosTrava: 999, segundosPreparacao: -5, segundosRelampago: 1, animacaoRelampago: 'discoteca' } })
-  assert.deepEqual(r.json(), { segundosTrava: 15, segundosPreparacao: 0, segundosRelampago: 3, animacaoRelampago: 'raio' })
+  assert.deepEqual(r.json(), { segundosTrava: 15, segundosPreparacao: 0, segundosRelampago: 3,
+    animacaoRelampago: 'raio', titulo: 'Confere ou Confia?' })
 })
 
 test('AJUSTES: mexer num campo não altera os outros', async () => {
@@ -567,14 +569,15 @@ test('AJUSTES: mexer num campo não altera os outros', async () => {
   await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
     payload: { segundosTrava: 7, animacaoRelampago: 'nenhuma' } })
   const so = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { segundosPreparacao: 3 } })
-  assert.deepEqual(so.json(), { segundosTrava: 7, segundosPreparacao: 3, segundosRelampago: 10, animacaoRelampago: 'nenhuma' })
+  assert.deepEqual(so.json(), { segundosTrava: 7, segundosPreparacao: 3, segundosRelampago: 10,
+    animacaoRelampago: 'nenhuma', titulo: 'Confere ou Confia?' })
 })
 
 test('AJUSTES: o painel mostra o ritmo em uso', async () => {
   const { app: a } = montarApp()
   const estado = (await a.inject({ url: comChave('/api/painel/estado') })).json()
   assert.deepEqual(Object.keys(estado.ajustes).sort(),
-    ['animacaoRelampago', 'segundosPreparacao', 'segundosRelampago', 'segundosTrava'])
+    ['animacaoRelampago', 'segundosPreparacao', 'segundosRelampago', 'segundosTrava', 'titulo'])
 })
 
 test('criar rodada aceita o ritmo e a animação', async () => {
@@ -584,4 +587,51 @@ test('criar rodada aceita o ritmo e a animação', async () => {
   const r = db.prepare('SELECT * FROM rodada ORDER BY id DESC LIMIT 1').get()
   assert.equal(r.segundos_preparacao, 9)
   assert.equal(r.animacao_relampago, 'flash')
+})
+
+// ---------- título da dinâmica ----------
+
+test('TÍTULO: cada rodada tem o seu, editável sem mexer em código', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  assert.equal((await entrar(a)).corpo.titulo, 'Confere ou Confia?', 'o padrão é o tema desta pílula')
+
+  await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { titulo: '  Buscar   ou  Redigir?  ' } })
+  const depois = await entrar(a)
+  assert.equal(depois.corpo.titulo, 'Buscar ou Redigir?', 'apara e normaliza os espaços')
+  assert.equal(depois.corpo.rodada, rodada.id, 'sem precisar criar rodada nova')
+})
+
+test('TÍTULO: vazio volta ao anterior, e o limite protege o cabeçalho do telão', async () => {
+  const { app: a } = montarApp()
+  const ajustar = titulo => a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { titulo } })
+  await ajustar('Um tema qualquer')
+  assert.equal((await ajustar('   ')).json().titulo, 'Um tema qualquer', 'não aceita apagar o título')
+  assert.equal((await ajustar('x'.repeat(200))).json().titulo.length, 60)
+})
+
+test('TÍTULO: criar rodada aceita o tema, e arquivar o herda', async () => {
+  const { db, app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/rodada'),
+    payload: { previsaoParticipantes: 30, titulo: 'Pílula 2 — Prompts' } })
+  assert.equal(db.prepare('SELECT titulo FROM rodada ORDER BY id DESC LIMIT 1').get().titulo, 'Pílula 2 — Prompts')
+
+  definirFase(db, db.prepare('SELECT MAX(id) id FROM rodada').get().id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+  const { nova } = (await a.inject({ method: 'POST', url: comChave('/api/painel/arquivar') })).json()
+  assert.equal(db.prepare('SELECT titulo FROM rodada WHERE id = ?').get(nova).titulo, 'Pílula 2 — Prompts',
+    'a próxima turma continua com o mesmo tema')
+})
+
+test('TÍTULO: o histórico identifica cada sessão pelo tema', async () => {
+  const { db, rodada, app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { titulo: 'Confere ou Confia?' } })
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+  const lista = (await a.inject({ url: comChave('/api/painel/sessoes') })).json()
+  assert.equal(lista[0].titulo, 'Confere ou Confia?')
+  const uma = (await a.inject({ url: comChave(`/api/painel/sessoes/${rodada.id}`) })).json()
+  assert.equal(uma.titulo, 'Confere ou Confia?')
 })

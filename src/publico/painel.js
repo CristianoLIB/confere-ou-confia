@@ -40,7 +40,7 @@ const NOME_DO_PASSO = {
 
 // Enquanto o host não mexe nos campos, eles espelham a rodada.
 let ajustesTocados = false
-for (const id of ['trava', 'preparacao', 'segundos', 'animacao']) {
+for (const id of ['titulo', 'trava', 'preparacao', 'segundos', 'animacao']) {
   document.getElementById(id).addEventListener('input', () => {
     ajustesTocados = true
     $('ajustesTexto').textContent = 'alterado — clique em Aplicar'
@@ -56,6 +56,7 @@ function desenhar (ag) {
     $('preparacao').value = ag.ajustes.segundosPreparacao
     $('segundos').value = ag.ajustes.segundosRelampago
     $('animacao').value = ag.ajustes.animacaoRelampago
+    $('titulo').value = ag.ajustes.titulo
     if (primeiro) $('ajustesTexto').textContent = 'em uso nesta rodada'
   }
   $('nConectados').textContent = ag.conectados
@@ -99,7 +100,8 @@ $('criar').addEventListener('click', async () => {
     segundosRelampago: Number($('segundos').value),
     segundosTrava: Number($('trava').value),
     segundosPreparacao: Number($('preparacao').value),
-    animacaoRelampago: $('animacao').value
+    animacaoRelampago: $('animacao').value,
+    titulo: $('titulo').value
   })
   if (r.ok) await avisar({ titulo: 'Rodada criada', texto: `${(await r.json()).numQuestoesAtivas} questões em jogo.` })
 })
@@ -129,7 +131,8 @@ $('salvarAjustes').addEventListener('click', async () => {
     segundosTrava: Number($('trava').value),
     segundosPreparacao: Number($('preparacao').value),
     segundosRelampago: Number($('segundos').value),
-    animacaoRelampago: $('animacao').value
+    animacaoRelampago: $('animacao').value,
+    titulo: $('titulo').value
   })
   if (r.ok) {
     const d = await r.json()
@@ -138,6 +141,7 @@ $('salvarAjustes').addEventListener('click', async () => {
     $('preparacao').value = d.segundosPreparacao
     $('segundos').value = d.segundosRelampago
     $('animacao').value = d.animacaoRelampago
+    $('titulo').value = d.titulo
     $('ajustesTexto').textContent = 'aplicado — vale na próxima questão de cada um'
     $('ajustesTexto').style.color = 'var(--laranja)'
   }

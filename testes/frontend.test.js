@@ -338,3 +338,38 @@ test('o painel ajusta o ritmo sem recriar a rodada', () => {
   assert.match(ler('painel.js'), /\/api\/painel\/ajustes/)
   assert.match(ler('painel.html'), /não precisa recriar a rodada/)
 })
+
+// ---------- RTQuiz é a plataforma, o título é da rodada ----------
+
+test('as telas se chamam RTQuiz, sem o tema fixo no código', () => {
+  for (const arquivo of ['quiz.html', 'telao.html', 'painel.html', 'questoes.html', 'historico.html']) {
+    const fonte = ler(arquivo)
+    assert.match(fonte, /RTQuiz/, `${arquivo} não menciona a plataforma`)
+    // O placeholder do campo é a única aparição legítima do tema numa tela.
+    const semPlaceholder = fonte.replace(/placeholder="[^"]*"/g, '')
+    assert.ok(!/Confere ou Confia/.test(semPlaceholder),
+      `${arquivo} ainda tem o tema fixo — ele agora vem da rodada`)
+  }
+  assert.ok(!/Confere ou Confia/.test(ler('telao.js')), 'o telão lê o título da rodada')
+})
+
+test('o título da rodada chega ao cabeçalho do quiz e do telão', () => {
+  assert.match(ler('quiz.js'), /cabecaTitulo\.textContent = estado\.titulo/)
+  assert.match(ler('telao.js'), /ajustes\?\.titulo/)
+})
+
+test('trocar o título ao vivo atualiza o quiz sem redesenhar a questão', () => {
+  const fonte = ler('quiz.js')
+  const ouvinte = fonte.slice(fonte.indexOf('function ouvirEstado'))
+  assert.match(ouvinte, /cabecaTitulo\.textContent/,
+    'o cabeçalho precisa acompanhar sem passar por desenhar(), que reiniciaria a trava')
+})
+
+test('o painel edita o título junto com o ritmo', () => {
+  assert.match(ler('painel.html'), /Título desta dinâmica/)
+  assert.match(ler('painel.js'), /titulo: \$\('titulo'\)\.value/)
+})
+
+test('o histórico identifica a sessão pelo tema, não só pela data', () => {
+  assert.match(ler('historico.js'), /escapar\(s\.titulo\)/)
+})

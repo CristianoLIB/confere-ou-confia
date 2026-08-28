@@ -49,7 +49,7 @@ const fatias = (acertos, erros, expirados = 0) => ([
 ])
 
 const cabeca = (ag, contador) => `<div class="cabeca etiq">
-  <span><strong>Confere ou Confia?</strong>&nbsp;&nbsp;Lean Institute Brasil</span>
+  <span><strong>RTQuiz</strong>&nbsp;&nbsp;${escapar(ag.ajustes?.titulo ?? '')}</span>
   <span>${contador}</span>
 </div>`
 
@@ -57,7 +57,7 @@ const cabeca = (ag, contador) => `<div class="cabeca etiq">
 
 const telaEspera = ag => `
   <div class="campo navy" style="grid-column:1/8; grid-row:2/5; justify-content:flex-end">
-    <h1 class="disp t-titulo">Confere<br><span style="color:var(--laranja)">ou</span> confia?</h1>
+    <h1 class="disp t-titulo">${escapar(ag.ajustes?.titulo ?? 'RTQuiz')}</h1>
   </div>
   <div class="campo branco" style="grid-column:1/8; grid-row:5/8; justify-content:flex-end">
     <div class="num t-numero">${ag.conectados}</div>
