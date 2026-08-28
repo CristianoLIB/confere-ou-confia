@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "node --test \"testes/**/*.test.js\"",
-    "start": "node src/servidor.js"
+    "start": "node src/servidor.js",
+    "carga": "node scripts/carga.js"
   },
   "keywords": [],
   "author": "",
