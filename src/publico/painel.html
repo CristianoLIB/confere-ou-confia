@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel — Confere ou Confia?</title>
+  <link rel="stylesheet" href="/comum.css">
+  <style>
+    body { display: flex; flex-direction: column; gap: var(--filete); min-height: 100vh; max-width: 900px; margin: 0 auto; }
+    .fileira { display: flex; gap: 14px; flex-wrap: wrap; }
+    .fileira.colada { gap: var(--filete); }
+    button.acao {
+      font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800;
+      text-transform: uppercase; font-size: 15px;
+      padding: 15px 22px; border: none; cursor: pointer;
+      background: var(--branco); color: var(--navy);
+      box-shadow: 5px 5px 0 var(--navy-escuro);
+      transition: transform .09s ease-out, box-shadow .09s ease-out, background .12s;
+    }
+    /* Mesmo relevo dos botões de resposta: bloco deslocado de aresta dura. */
+    button.acao:hover:not(:disabled)  { background: #f4f5f9; box-shadow: 2px 2px 0 var(--laranja); transform: translate(3px, 3px); }
+    button.acao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(5px, 5px); }
+    button.acao.principal { background: var(--laranja); color: var(--navy-escuro); }
+    button.acao.principal:hover:not(:disabled) { background: var(--laranja-2); box-shadow: 2px 2px 0 var(--branco); }
+    /* Zerar é destrutivo: mesma base branca, anel e texto em laranja. */
+    button.acao.fantasma { color: var(--laranja); box-shadow: inset 0 0 0 2px var(--laranja), 5px 5px 0 var(--navy-escuro); }
+    button.acao.fantasma:hover { box-shadow: inset 0 0 0 2px var(--laranja), 2px 2px 0 var(--laranja); }
+    button.acao.fantasma:active { box-shadow: inset 0 0 0 2px var(--laranja); }
+    /* Desabilitado não é apertável, então não fica levantado. */
+    button.acao:disabled,
+    button.acao:disabled:hover { background: #3a3470; color: #6a6494; cursor: default;
+                                 box-shadow: none; transform: none; }
+    input {
+      font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800;
+      font-size: 32px; padding: 10px 14px; width: 128px; border: none;
+      background: var(--branco); color: var(--navy); font-variant-numeric: tabular-nums;
+    }
+    label { display: flex; flex-direction: column; gap: 9px; }
+    label .etiq { color: var(--lilas); }
+    .contador { flex: 1; }
+    .contador .num { font-size: 62px; }
+    .contador .etiq { margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="cabeca etiq"><strong>Painel de controle</strong><span>Confere ou Confia?</span></div>
+
+  <div class="campo laranja" style="flex-direction: row; align-items: center; gap: 14px; padding: 16px 20px">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+    <span class="disp" style="font-size: 19px">Esta tela é sua. Não compartilhe no Zoom — compartilhe o telão.</span>
+  </div>
+
+  <section class="campo navy">
+    <div class="etiq" style="color: var(--lilas)">01 — Preparar a rodada</div>
+    <div class="fileira" style="align-items: flex-end; gap: 20px; margin-top: 18px">
+      <label><span class="etiq">Previsão de gente</span>
+        <input id="previsao" type="number" min="1" max="200" value="45"></label>
+      <label><span class="etiq">Cronômetro (s)</span>
+        <input id="segundos" type="number" min="3" max="60" value="10"></label>
+      <label><span class="etiq">Trava (s)</span>
+        <input id="trava" type="number" min="0" max="5" value="4"></label>
+      <button id="criar" class="acao principal">Criar rodada</button>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 22px; border-top: 1px solid #3a3470; padding-top: 18px">
+      <span class="num" id="questoesAtivas" style="font-size: 44px; color: var(--laranja)">—</span>
+      <span style="font-size: 16px; color: var(--lilas-claro); font-weight: 500" id="previsaoTexto"></span>
+    </div>
+  </section>
+
+  <div class="fileira colada">
+    <div class="campo branco contador"><div class="num" id="nConectados">0</div><div class="etiq" style="color: var(--texto-claro)">conectados</div></div>
+    <div class="campo laranja contador"><div class="num" id="nRespondendo">0</div><div class="etiq">respondendo</div></div>
+    <div class="campo teal contador"><div class="num" id="nFinalizados">0</div><div class="etiq">finalizados</div></div>
+  </div>
+
+  <section class="campo navy">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <div class="etiq" style="color: var(--lilas)">02 — Conduzir</div>
+      <div class="etiq">fase&nbsp;&nbsp;<span style="color: var(--laranja)" id="fase">—</span></div>
+    </div>
+    <div class="fileira" style="margin-top: 18px">
+      <button id="liberar" class="acao">Liberar o início</button>
+      <button id="entradas" class="acao">Fechar entradas</button>
+      <button id="revelar" class="acao principal">Revelar</button>
+    </div>
+  </section>
+
+  <section class="campo navy">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <div class="etiq" style="color: var(--lilas)">03 — Debrief</div>
+      <div class="etiq" style="color: var(--lilas-claro)" id="passoTexto">—</div>
+    </div>
+    <div class="fileira" style="margin-top: 18px">
+      <button id="voltar" class="acao">Voltar</button>
+      <button id="avancar" class="acao principal">Avançar</button>
+    </div>
+  </section>
+
+  <section class="campo navy" style="flex: 1; justify-content: flex-end">
+    <div class="etiq" style="color: var(--lilas)">Ensaio</div>
+    <div class="fileira" style="margin-top: 18px">
+      <button id="zerar" class="acao fantasma">Zerar rodada</button>
+      <a href="#" id="linkTelao" target="_blank"><button class="acao">Abrir telão</button></a>
+    </div>
+  </section>
+
+  <script type="module" src="/painel.js"></script>
+</body>
+</html>
