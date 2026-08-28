@@ -33,7 +33,10 @@ a { color: var(--laranja); }
 a:hover { color: var(--laranja-2); }
 
 /* Campos de cor chapados, encostados, separados pelo filete. */
-.campo  { padding: 22px 20px; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* flex-shrink 0: numa coluna que rola, o padrão (1) esmaga as caixas e o
+   texto vaza para fora da cor de fundo. Quem precisa encolher — o enunciado,
+   os campos com flex inline — sobrescreve depois. */
+.campo  { padding: 22px 20px; display: flex; flex-direction: column; min-width: 0; min-height: 0; flex-shrink: 0; }
 .navy   { background: var(--navy);    color: var(--branco); }
 .branco { background: var(--branco);  color: var(--navy); }
 .laranja{ background: var(--laranja); color: var(--navy-escuro); }

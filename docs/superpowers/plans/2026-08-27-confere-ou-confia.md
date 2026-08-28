@@ -3813,3 +3813,23 @@ nova, ambos com a aba aberta.
   antes do `/api/entregar`, então o cronômetro começa cheio — verificado no
   navegador: durante a chamada o mostrador está vazio, e marca 10s ao sair.
   `prefers-reduced-motion` recebe o aviso estático.
+
+## Correção (2026-08-28): campos esmagados na tela de resultado
+
+**Sintoma:** na tela de resultado do participante, os feedbacks apareciam
+cortados, como se o texto estivesse por baixo da caixa; e na frase final a
+terceira linha ficava fora do fundo branco.
+
+**Causa raiz, única para os dois:** `.campo` herdava `flex-shrink: 1`. Numa
+coluna que rola, o flex distribui o espaço que falta encolhendo os itens — as
+caixas ficavam menores que o próprio conteúdo. Medido: os itens pediam 174px e
+recebiam 115px; a caixa branca pedia 91px e recebia 71px, exatamente a altura de
+uma linha.
+
+**Correção:** `flex-shrink: 0` em `.campo`. Quem precisa absorver espaço
+sobrescreve depois — `.enunciado-caixa` com `flex: 1 1 auto`, e os campos com
+`flex` inline.
+
+**Verificado** nas quatro telas: resultado sem esmagamento e com o branco
+cobrindo o texto; questão com o enunciado ainda encolhendo e os botões à vista
+sem rolagem; painel e os 7 passos do telão sem cortes.

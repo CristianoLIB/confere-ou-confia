@@ -98,6 +98,22 @@ test('o subtítulo do botão é legível e não empurra os botões para empilhar
   assert.match(estreita, /flex-basis:\s*12\dpx/, 'sem base menor, 320px empilha')
 })
 
+test('os campos não encolhem: numa coluna que rola, o texto vazaria da cor de fundo', () => {
+  const css = ler('comum.css')
+  const campo = css.match(/^\.campo\s+\{[^}]*\}/m)[0]
+  assert.match(campo, /flex-shrink:\s*0/,
+    'sem isto o flex esmaga as caixas do resultado e o feedback sai para fora do azul')
+  // Quem precisa absorver o espaço sobrescreve depois.
+  assert.match(css, /\.enunciado-caixa\s*\{[^}]*flex:\s*1 1 auto/,
+    'o enunciado ainda precisa encolher e rolar')
+})
+
+test('o fechamento do telão fala com quem está lendo', () => {
+  const fonte = ler('telao.js')
+  assert.ok(!/resultado de cada um/.test(fonte), 'a frase antiga falava sobre as pessoas, não com elas')
+  assert.match(fonte, /o seu resultado está na sua tela/)
+})
+
 test('o botão travado perde o relevo', () => {
   const css = ler('comum.css')
   const travado = css.match(/\.opcao:disabled\s*\{[^}]*\}/)

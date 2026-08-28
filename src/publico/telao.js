@@ -162,7 +162,7 @@ const telaFechamento = () => `
   </div>
   <div class="campo branco" style="grid-column:1/13; grid-row:6/8; align-items:center; justify-content:center; text-align:center">
     <div class="disp t-obrigado">Muito obrigado<br>a todos.</div>
-    <div class="etiq" style="color:var(--texto-claro); margin-top:12px">o resultado de cada um já está na tela dele</div>
+    <div class="etiq" style="color:var(--texto-claro); margin-top:12px">o seu resultado está na sua tela</div>
   </div>`
 
 // Sobe o número em vez de estampá-lo: é o momento da revelação.
