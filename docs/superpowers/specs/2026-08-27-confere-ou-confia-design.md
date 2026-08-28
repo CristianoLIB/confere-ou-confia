@@ -119,6 +119,12 @@ URL protegida por chave. Ações:
 
 - Criar rodada informando a **previsão de participantes**; o sistema sugere o
   número de questões ativas e você pode sobrescrever.
+- **Definir o endereço curto** por onde os participantes entram —
+  `rtquiz.libtools.online/rt`, ou `/rt-28-08-2026` para identificar a turma. É
+  o que o telão manda digitar e para onde o QR aponta.
+- **Trocar o título da dinâmica** a qualquer momento: aparece no cabeçalho do
+  quiz e do telão, e identifica a sessão no histórico. Até 60 caracteres para
+  não quebrar o cabeçalho do telão; vazio mantém o anterior.
 - **Ajustar o ritmo com a rodada em andamento**, sem recriar nada: quanto tempo
   os botões ficam travados, quantos segundos dura o aviso antes do relâmpago,
   o cronômetro do relâmpago, e qual chamada anuncia a pergunta. Vale já na
@@ -127,9 +133,11 @@ URL protegida por chave. Ações:
 - Liberar o início (`espera` → `respondendo`).
 - **Revelar**.
 - Avançar os passos do debrief.
-- **Encerrar para todos** (`→ encerrado`): quem está no quiz vê "Dinâmica
-  encerrada", ninguém novo entra, o telão fixa o fechamento. Diferente de
-  fechar entradas, que só barra gente nova.
+- **Encerrar para todos** (`→ encerrado`): ninguém novo entra, quem está
+  respondendo para na hora, o telão fixa o fechamento e o **placar pessoal
+  abre** na tela de cada um — inclusive de quem não terminou. Diferente de
+  fechar entradas, que só barra gente nova. Como libera o resultado, o caminho
+  normal é revelar primeiro e deixar isto para emergência.
 - **Arquivar**: encerra a sessão atual preservando-a no histórico e abre uma
   nova com os mesmos parâmetros. É o caminho normal entre turmas.
 - **Zerar**: apaga as respostas da sessão atual. É o único caminho sem volta do
@@ -282,7 +290,7 @@ rodada
   id, criada_em, previsao_participantes, num_questoes_ativas,
   fase TEXT CHECK (fase IN ('espera','respondendo','revelado','encerrado')),
   entradas_abertas INTEGER, segundos_relampago INTEGER, segundos_trava INTEGER,
-              titulo TEXT,
+              titulo TEXT, atalho TEXT,
               segundos_preparacao INTEGER, animacao_relampago TEXT,
               passo_debrief INTEGER
 
@@ -371,7 +379,27 @@ Atribuído na entrada, **alternando por ordem de chegada** (par → `cronometro`
 Ambos os grupos recebem a mesma pergunta relâmpago; só o grupo `cronometro` vê
 a contagem regressiva.
 
-### 6.4 Quem não termina
+### 6.4 Endereço curto
+
+A raiz do domínio não é rota: quem digitasse só o host recebia 404, e era
+exatamente isso que o telão mandava digitar. Cada rodada passa a ter um
+`atalho` — `rt` por padrão — e a URL que o telão mostra é `host/atalho`, a
+mesma para onde o QR aponta.
+
+O atalho é **reescrito antes do roteamento**, num hook, e não redirecionado: a
+URL curta continua na barra do navegador, e o `@fastify/static` segue servindo
+os arquivos sem disputar rota. Só chega ao banco o que parece atalho — sem
+barra interna e sem ponto.
+
+Normalização: minúsculas, sem acento, espaço e caractere inválido viram hífen,
+até 40 caracteres. Nomes que já são rota (`api`, `stream`, `favicon`,
+`robots`, `assets`, `public`) são recusados — um atalho igual a eles
+sequestraria a aplicação. Valor vazio mantém o anterior.
+
+O QR é servido com `no-cache`, e o telão inclui o atalho na query da imagem:
+trocar o endereço no painel atualiza o QR na hora.
+
+### 6.5 Quem não termina
 
 Numa turma de 30, uma ou duas pessoas sempre ficam pelo caminho. Três regras
 tratam disso sem que o host precise esperar por elas:
@@ -394,7 +422,7 @@ terminou vê o que respondeu, e as perguntas que ficaram para trás aparecem com
 **"Não respondeu"** — em lilás, nunca como "Escorregou". Errar e não chegar a
 responder são coisas diferentes, e a tela diz qual foi.
 
-### 6.5 Ritmo e chamada
+### 6.6 Ritmo e chamada
 
 Quatro ajustes vivem na rodada e podem mudar durante ela: `segundos_trava`
 (0-15), `segundos_preparacao` (0-30), `segundos_relampago` (3-120) e
@@ -405,7 +433,7 @@ Preparação de zero segundos pula a tela e vai direto para a chamada. Animaçã
 `nenhuma` entra direto na pergunta. A chamada respeita `prefers-reduced-motion`:
 quem pediu menos movimento vê o aviso estático, não a animação.
 
-### 6.6 Trava de armação
+### 6.7 Trava de armação
 
 Quando uma questão é entregue ao participante, o servidor carimba `entregue_em`
 na atribuição. Uma resposta que chegue **antes de `segundos_trava`** é recusada
@@ -422,7 +450,7 @@ instantaneamente.
 
 Padrão de 4 segundos, ajustável de 3 a 5 no painel.
 
-### 6.7 Validação do cronômetro
+### 6.8 Validação do cronômetro
 
 O servidor grava `entregue_em` ao servir a questão relâmpago. Ao receber a
 resposta, se `agora - entregue_em > segundos_relampago + 2s` (folga de rede), a
@@ -432,7 +460,7 @@ autoenvia `'expirou'` ao zerar.
 Estourar o tempo **não conta como erro**. Vira uma fatia própria no gráfico:
 sob pressão, não decidir também é resultado.
 
-### 6.8 Identidade e retomada
+### 6.9 Identidade e retomada
 
 Token anônimo gerado no primeiro acesso, guardado em `localStorage` **e** em
 cookie. Reabrir a página **retoma** a mesma sessão — não cria participante novo,
@@ -460,7 +488,8 @@ questão, já que uma resposta recusada nunca entrava na lista de respondidas.
 
 | Rota | Retorna |
 |---|---|
-| `GET /qr.svg` | QR do link do quiz, no host do próprio pedido; sem chave, é o participante que escaneia |
+| `GET /qr.svg` | QR do endereço curto, no host do próprio pedido; sem chave, é o participante que escaneia |
+| `GET /<atalho>` | o quiz na URL curta, reescrita antes do roteamento |
 | `POST /api/entrar` | `{ token, rotulo, fase, questoes: [{id, texto}] }` — **sem gabarito** |
 | `POST /api/entregar` | carimba `entregue_em` ao exibir a questão; é o que arma a trava e, no relâmpago, o cronômetro |
 | `POST /api/responder` | `{ ok, proxima }` — **não diz se acertou**; 425 quando `cedo_demais` |

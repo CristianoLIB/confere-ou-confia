@@ -38,7 +38,7 @@ subdomínios da `libtools.online`).
 
 | Tela | URL | Quem vê |
 |---|---|---|
-| Quiz | `https://rtquiz.libtools.online/quiz.html` | vai no chat do Zoom |
+| Quiz | `https://rtquiz.libtools.online/rt` | vai no chat do Zoom; o endereço curto se ajusta no painel |
 | Telão | `https://rtquiz.libtools.online/telao.html?k=CHAVE` | você compartilha esta |
 | Painel | `https://rtquiz.libtools.online/painel.html?k=CHAVE` | só você, segunda tela |
 
