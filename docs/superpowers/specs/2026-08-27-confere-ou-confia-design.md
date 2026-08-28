@@ -119,6 +119,9 @@ URL protegida por chave. Ações:
 
 - Criar rodada informando a **previsão de participantes**; o sistema sugere o
   número de questões ativas e você pode sobrescrever.
+- **Tirar do ar / colocar no ar**: fora do ar, quem acessa o endereço vê apenas
+  *"RTQuiz — nenhum quiz ativo no momento"*, inclusive quem já participou. É o
+  estado normal entre reuniões.
 - **Definir o endereço curto** por onde os participantes entram —
   `rtquiz.libtools.online/rt`, ou `/rt-28-08-2026` para identificar a turma. É
   o que o telão manda digitar e para onde o QR aponta.
@@ -290,7 +293,7 @@ rodada
   id, criada_em, previsao_participantes, num_questoes_ativas,
   fase TEXT CHECK (fase IN ('espera','respondendo','revelado','encerrado')),
   entradas_abertas INTEGER, segundos_relampago INTEGER, segundos_trava INTEGER,
-              titulo TEXT, atalho TEXT,
+              titulo TEXT, atalho TEXT, no_ar INTEGER,
               segundos_preparacao INTEGER, animacao_relampago TEXT,
               passo_debrief INTEGER
 
@@ -379,7 +382,25 @@ Atribuído na entrada, **alternando por ordem de chegada** (par → `cronometro`
 Ambos os grupos recebem a mesma pergunta relâmpago; só o grupo `cronometro` vê
 a contagem regressiva.
 
-### 6.4 Endereço curto
+### 6.4 Fora do ar
+
+Entre reuniões a dinâmica fica desligada, e quem acessa encontra a porta
+fechada — não a sala vazia. Uma rodada nasce **no ar**; o painel liga e desliga.
+
+Fora do ar, para o participante é como se não houvesse rodada nenhuma: `entrar`,
+`entregar`, `responder` e `meu-resultado` respondem **503 com `sem_quiz`**, e o
+canal de eventos emite só `{ noAr: false }` — nada da sessão anterior vaza para
+uma tela que deveria estar apagada. Sem isso, quem já tinha participado voltava a
+ver o próprio resultado ao abrir o link.
+
+A URL curta **continua servindo a página** mesmo desligada: quem tem o link
+salvo recebe a tela de "nenhum quiz ativo", não um 404 cru do navegador. Quem
+decide o que mostrar é o cliente; a API por trás continua fechada.
+
+O canal de eventos é aberto pelo participante **mesmo sem quiz no ar** — é por
+ele que a tela fica sabendo que a dinâmica voltou, sem precisar recarregar.
+
+### 6.5 Endereço curto
 
 A raiz do domínio não é rota: quem digitasse só o host recebia 404, e era
 exatamente isso que o telão mandava digitar. Cada rodada passa a ter um
@@ -399,7 +420,7 @@ sequestraria a aplicação. Valor vazio mantém o anterior.
 O QR é servido com `no-cache`, e o telão inclui o atalho na query da imagem:
 trocar o endereço no painel atualiza o QR na hora.
 
-### 6.5 Quem não termina
+### 6.6 Quem não termina
 
 Numa turma de 30, uma ou duas pessoas sempre ficam pelo caminho. Três regras
 tratam disso sem que o host precise esperar por elas:
@@ -422,7 +443,7 @@ terminou vê o que respondeu, e as perguntas que ficaram para trás aparecem com
 **"Não respondeu"** — em lilás, nunca como "Escorregou". Errar e não chegar a
 responder são coisas diferentes, e a tela diz qual foi.
 
-### 6.6 Ritmo e chamada
+### 6.7 Ritmo e chamada
 
 Quatro ajustes vivem na rodada e podem mudar durante ela: `segundos_trava`
 (0-15), `segundos_preparacao` (0-30), `segundos_relampago` (3-120) e
@@ -433,7 +454,7 @@ Preparação de zero segundos pula a tela e vai direto para a chamada. Animaçã
 `nenhuma` entra direto na pergunta. A chamada respeita `prefers-reduced-motion`:
 quem pediu menos movimento vê o aviso estático, não a animação.
 
-### 6.7 Trava de armação
+### 6.8 Trava de armação
 
 Quando uma questão é entregue ao participante, o servidor carimba `entregue_em`
 na atribuição. Uma resposta que chegue **antes de `segundos_trava`** é recusada
@@ -450,7 +471,7 @@ instantaneamente.
 
 Padrão de 4 segundos, ajustável de 3 a 5 no painel.
 
-### 6.8 Validação do cronômetro
+### 6.9 Validação do cronômetro
 
 O servidor grava `entregue_em` ao servir a questão relâmpago. Ao receber a
 resposta, se `agora - entregue_em > segundos_relampago + 2s` (folga de rede), a
@@ -460,7 +481,7 @@ autoenvia `'expirou'` ao zerar.
 Estourar o tempo **não conta como erro**. Vira uma fatia própria no gráfico:
 sob pressão, não decidir também é resultado.
 
-### 6.9 Identidade e retomada
+### 6.10 Identidade e retomada
 
 Token anônimo gerado no primeiro acesso, guardado em `localStorage` **e** em
 cookie. Reabrir a página **retoma** a mesma sessão — não cria participante novo,
@@ -506,6 +527,7 @@ questão, já que uma resposta recusada nunca entrava na lista de respondidas.
 | `POST /api/painel/debrief` | avança o passo do debrief |
 | `POST /api/painel/zerar` | limpa a rodada |
 | `GET /stream/painel` (SSE) | agregados completos |
+| `POST /api/painel/no-ar` | liga e desliga a dinâmica para os participantes |
 | `POST /api/painel/ajustes` | muda o ritmo e a chamada da rodada em andamento |
 | `POST /api/painel/arquivar` | encerra a sessão atual e abre uma nova igual |
 | `GET /api/painel/sessoes`, `GET /api/painel/sessoes/:id` | histórico de sessões |

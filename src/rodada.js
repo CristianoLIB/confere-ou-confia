@@ -89,6 +89,17 @@ export function rodadaAtual (db) {
   return db.prepare('SELECT * FROM rodada ORDER BY id DESC LIMIT 1').get()
 }
 
+// O que o participante enxerga. Fora do ar, para ele é como se não existisse
+// rodada nenhuma — inclusive para quem já participou de uma sessão anterior.
+export function rodadaNoAr (db) {
+  const rodada = rodadaAtual(db)
+  return rodada && rodada.no_ar ? rodada : undefined
+}
+
+export function definirNoAr (db, rodadaId, noAr) {
+  db.prepare('UPDATE rodada SET no_ar = ? WHERE id = ?').run(noAr ? 1 : 0, rodadaId)
+}
+
 function questoesEmJogo (db, rodadaId) {
   return db.prepare(`
     SELECT q.* FROM rodada_questao rq JOIN questao q ON q.id = rq.questao_id

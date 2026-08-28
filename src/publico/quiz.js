@@ -4,6 +4,7 @@ const marcador = document.getElementById('marcador')
 const cabecaTitulo = document.getElementById('titulo')
 
 const estado = {
+  noAr: true,
   rodada: null, rotulo: '', fase: 'espera', resultadoLiberado: false,
   segundosTrava: 4, segundosRelampago: 10, segundosPreparacao: 5, animacaoRelampago: 'raio',
   titulo: 'RTQuiz',
@@ -36,14 +37,33 @@ const enviarJson = (url, corpo) => fetch(url, {
   method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo ?? {})
 })
 
+// A tela de quando não há quiz no ar. Nem o resultado de uma sessão passada
+// aparece: o participante encontra a porta fechada, não a sala vazia.
+function desenharSemQuiz () {
+  estado.noAr = false
+  cabecaTitulo.textContent = 'RTQuiz'
+  marcador.textContent = ''
+  tela.innerHTML = `
+    <div class="campo navy" style="flex:1; align-items:center; justify-content:center; text-align:center">
+      <div class="disp" style="font-size:clamp(46px, 15vw, 92px); letter-spacing:-.03em">RTQuiz</div>
+    </div>
+    <div class="campo laranja" style="align-items:center; text-align:center">
+      <div class="disp disp-m">Nenhum quiz<br>ativo no momento.</div>
+    </div>
+    <div class="campo navy etiq" style="color:var(--lilas); text-align:center">Lean Institute Brasil</div>`
+}
+
 async function entrar () {
   const r = await enviarJson('/api/entrar')
   if (!r.ok) {
-    tela.innerHTML = '<div class="campo navy" style="flex:1; justify-content:center"><p style="color:var(--lilas-claro); font-size:16px; font-weight:500">A dinâmica ainda não abriu, as entradas foram fechadas, ou ela já encerrou.</p></div>'
+    const corpo = await r.json().catch(() => ({}))
+    if (r.status === 503 || corpo.motivo === 'sem_quiz') { desenharSemQuiz(); return false }
+    tela.innerHTML = '<div class="campo navy" style="flex:1; justify-content:center"><p style="color:var(--lilas-claro); font-size:16px; font-weight:500">As entradas desta dinâmica foram fechadas.</p></div>'
     return false
   }
   const d = await r.json()
   Object.assign(estado, {
+    noAr: true,
     rodada: d.rodada, rotulo: d.rotulo, fase: d.fase, resultadoLiberado: d.resultadoLiberado,
     segundosTrava: d.segundosTrava, segundosRelampago: d.segundosRelampago,
     segundosPreparacao: d.segundosPreparacao, animacaoRelampago: d.animacaoRelampago,
@@ -62,7 +82,7 @@ async function reentrar () {
   estado.reentrando = true
   pararTemporizadores()
   estado.enviando = false
-  const ok = await entrar()
+  const ok = await entrar()   // desenha a tela de "sem quiz" se for o caso
   estado.reentrando = false
   if (ok) await desenhar()
 }
@@ -268,6 +288,7 @@ function desenharResultado () {
 
 async function desenhar () {
   pararTemporizadores()
+  if (!estado.noAr) { desenharSemQuiz(); return }
   cabecaTitulo.textContent = estado.titulo || 'RTQuiz'
   marcador.textContent = estado.rotulo
 
@@ -349,8 +370,10 @@ function ouvirEstado () {
   const fonte = new EventSource('/stream')
   fonte.addEventListener('estado', evento => {
     const d = JSON.parse(evento.data)
-    // Rodada trocada: as questões em memória são de outra rodada. Reinscrever.
-    if (estado.rodada !== null && d.rodada !== estado.rodada) { reentrar(); return }
+    // Tirado do ar: a tela apaga na hora, sem esperar recarregar.
+    if (d.noAr === false) { pararTemporizadores(); desenharSemQuiz(); return }
+    // Voltou ao ar, ou trocou de rodada: refaz a inscrição do zero.
+    if (!estado.noAr || (estado.rodada !== null && d.rodada !== estado.rodada)) { reentrar(); return }
     const mudou = d.fase !== estado.fase || d.resultadoLiberado !== estado.resultadoLiberado
     estado.fase = d.fase
     estado.resultadoLiberado = d.resultadoLiberado
@@ -368,4 +391,7 @@ function ouvirEstado () {
   })
 }
 
-if (await entrar()) { await desenhar(); ouvirEstado() }
+// O canal abre sempre, mesmo sem quiz no ar: é por ele que a tela fica
+// sabendo que a dinâmica voltou. Antes ficava presa em "nenhum quiz ativo".
+if (await entrar()) await desenhar()
+ouvirEstado()

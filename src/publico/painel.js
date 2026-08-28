@@ -71,6 +71,11 @@ function desenhar (ag) {
   $('nFinalizados').textContent = ag.finalizados
   $('fase').textContent = ag.fase
   $('entradas').textContent = ag.entradasAbertas === false ? 'Abrir entradas' : 'Fechar entradas'
+  const noAr = ag.noAr !== false
+  $('noAr').textContent = noAr ? 'Tirar do ar' : 'Colocar no ar'
+  $('noAr').className = noAr ? 'acao fantasma' : 'acao principal'
+  $('arTexto').textContent = noAr ? 'no ar' : 'fora do ar'
+  $('arTexto').style.color = noAr ? 'var(--teal)' : 'var(--laranja)'
 
   const passos = montarPassos(ag)
   const indice = Math.min(ag.passoDebrief, passos.length - 1)
@@ -160,6 +165,23 @@ $('salvarAjustes').addEventListener('click', async () => {
     $('ajustesTexto').textContent = 'aplicado — vale na próxima questão de cada um'
     $('ajustesTexto').style.color = 'var(--laranja)'
   }
+})
+
+$('noAr').addEventListener('click', async () => {
+  const saindo = atual?.noAr !== false
+  if (saindo) {
+    const ok = await confirmar({
+      titulo: 'Tirar do ar?',
+      texto: 'Quem acessar o endereço passa a ver apenas “RTQuiz — nenhum quiz ativo no momento”. Vale também para quem já participou.',
+      detalhe: (atual?.conectados ?? 0) > 0
+        ? `${atual.conectados} pessoa(s) estão com a tela aberta e vão perder o que estão vendo.`
+        : '',
+      rotuloConfirmar: 'Tirar do ar',
+      perigo: true
+    })
+    if (!ok) return
+  }
+  enviar('/api/painel/no-ar', { noAr: !saindo })
 })
 
 $('liberar').addEventListener('click', () => enviar('/api/painel/fase', { fase: 'respondendo' }))

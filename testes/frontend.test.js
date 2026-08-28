@@ -483,3 +483,36 @@ test('o painel edita o título junto com o ritmo', () => {
 test('o histórico identifica a sessão pelo tema, não só pela data', () => {
   assert.match(ler('historico.js'), /escapar\(s\.titulo\)/)
 })
+
+// ---------- tela de sem quiz ----------
+
+test('o participante vê RTQuiz quando não há quiz no ar', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /function desenharSemQuiz/)
+  assert.match(fonte, /Nenhum quiz<br>ativo no momento/)
+  // 503 é a porta fechada; entradas fechadas é outra mensagem.
+  assert.match(fonte, /r\.status === 503 \|\| corpo\.motivo === 'sem_quiz'/)
+  // E a tela apaga na hora em que o host tira do ar, sem recarregar.
+  assert.match(fonte, /if \(d\.noAr === false\)/)
+})
+
+test('o canal de eventos abre mesmo sem quiz no ar', () => {
+  const fonte = ler('quiz.js')
+  // Se ouvirEstado() só rodasse ao entrar com sucesso, quem abrisse a página
+  // antes da dinâmica ficaria preso na tela de "nenhum quiz ativo".
+  assert.ok(!/if \(await entrar\(\)\) \{ await desenhar\(\); ouvirEstado\(\) \}/.test(fonte))
+  assert.match(fonte, /if \(await entrar\(\)\) await desenhar\(\)\s*\n\s*ouvirEstado\(\)/)
+})
+
+test('o telão também mostra a tela de sem quiz', () => {
+  const fonte = ler('telao.js')
+  assert.match(fonte, /const telaSemQuiz/)
+  assert.match(fonte, /ag\.noAr === false/)
+})
+
+test('o painel tem o interruptor do ar e explica o efeito', () => {
+  assert.match(ler('painel.html'), /id="noAr"/)
+  assert.match(ler('painel.html'), /mesmo quem já participou/)
+  assert.match(ler('painel.js'), /\/api\/painel\/no-ar/)
+  assert.match(ler('painel.js'), /Tirar do ar/)
+})

@@ -52,7 +52,7 @@ const fatias = (acertos, erros, expirados = 0) => ([
 ])
 
 const cabeca = (ag, contador) => `<div class="cabeca etiq">
-  <span><strong>RTQuiz</strong>&nbsp;&nbsp;${escapar(ag.ajustes?.titulo ?? '')}</span>
+  <span><strong>RTQuiz</strong>&nbsp;&nbsp;${escapar(ag.noAr === false ? 'Lean Institute Brasil' : (ag.ajustes?.titulo ?? ''))}</span>
   <span>${contador}</span>
 </div>`
 
@@ -188,8 +188,17 @@ function animarHeroi (alvo) {
   requestAnimationFrame(passo)
 }
 
+const telaSemQuiz = () => `
+  <div class="campo navy" style="grid-column:1/13; grid-row:2/6; align-items:center; justify-content:center">
+    <div class="disp" style="font-size:clamp(70px, 15vw, 190px); letter-spacing:-.03em">RTQuiz</div>
+  </div>
+  <div class="campo laranja" style="grid-column:1/13; grid-row:6/8; align-items:center; justify-content:center">
+    <div class="disp t-titulo">Nenhum quiz ativo no momento.</div>
+  </div>`
+
 function desenhar (ag) {
   const tela = document.getElementById('tela')
+  if (ag.noAr === false) { tela.innerHTML = cabeca(ag, 'fora do ar') + telaSemQuiz(); return }
   if (ag.fase === 'espera') { tela.innerHTML = cabeca(ag, 'sala de espera') + telaEspera(ag); return }
   if (ag.fase === 'respondendo') { tela.innerHTML = cabeca(ag, 'respondendo') + telaRespondendo(ag); return }
   if (ag.fase === 'encerrado') { tela.innerHTML = cabeca(ag, 'encerrado') + telaFechamento(); return }

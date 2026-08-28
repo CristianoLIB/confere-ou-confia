@@ -14,7 +14,8 @@ import { registrarResposta, resultadoPessoal } from './respostas.js'
 import * as questoes from './questoes.js'
 import {
   criarRodada, rodadaAtual, entrarParticipante, questoesDoParticipante,
-  marcarEntregue, definirFase, definirEntradas, definirPassoDebrief, definirAjustes, zerarRodada
+  marcarEntregue, definirFase, definirEntradas, definirPassoDebrief, definirAjustes,
+  definirNoAr, rodadaNoAr, zerarRodada
 } from './rodada.js'
 
 const PASTA_SRC = path.dirname(fileURLToPath(import.meta.url))
@@ -25,8 +26,13 @@ const PING_MS = 25_000
 
 // O ÚNICO formato que trafega no canal do participante. Se algo for
 // acrescentado aqui, o teste de vazamento quebra — de propósito.
+// Quando não há rodada no ar, o participante recebe só isto: nada da rodada
+// anterior vaza para uma tela que deve estar apagada.
+export const PAYLOAD_SEM_QUIZ = { noAr: false }
+
 export function payloadDoParticipante (rodada, liberado = false) {
   return {
+    noAr: true,
     // O id permite ao cliente perceber que a rodada trocou (host zerou ou
     // criou outra) e se reinscrever, em vez de insistir numa sessão órfã.
     rodada: rodada.id,
@@ -77,6 +83,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     const candidato = caminho.replace(/^\/|\/$/g, '')
     // Só o que parece atalho chega ao banco: sem barra interna e sem ponto.
     if (candidato && !candidato.includes('/') && !candidato.includes('.')) {
+      // Serve a página mesmo fora do ar: quem tem o link salvo merece a tela
+      // de "nenhum quiz ativo", não um 404 cru do navegador.
       const rodada = rodadaAtual(db)
       if (rodada && rodada.atalho === candidato.toLowerCase()) {
         req.raw.url = '/quiz.html' + (consulta ? `?${consulta}` : '')
@@ -88,8 +96,10 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   const canais = { participantes: criarCanal(), painel: criarCanal() }
 
   const emitirParticipantes = () => {
-    const rodada = rodadaAtual(db)
-    if (rodada) canais.participantes.publicar('estado', payloadDoParticipante(rodada, resultadoLiberado(db, rodada)))
+    const rodada = rodadaNoAr(db)
+    canais.participantes.publicar('estado', rodada
+      ? payloadDoParticipante(rodada, resultadoLiberado(db, rodada))
+      : PAYLOAD_SEM_QUIZ)
   }
   const emitirPainel = agendarComDebounce(() => {
     const rodada = rodadaAtual(db)
@@ -99,6 +109,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   const estadoDoPainel = rodada => ({
     ...calcularAgregados(db, rodada.id),
     entradasAbertas: Boolean(rodada.entradas_abertas),
+    noAr: Boolean(rodada.no_ar),
     totalPassos: totalPassosDebrief(db, rodada.id),
     resultadoLiberado: resultadoLiberado(db, rodada),
     ajustes: {
@@ -132,10 +143,17 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     return rodada
   }
 
+  // Para o participante: sem rodada e fora do ar são a mesma coisa.
+  function exigirNoAr (reply) {
+    const rodada = rodadaNoAr(db)
+    if (!rodada) { reply.code(503).send({ motivo: 'sem_quiz' }); return null }
+    return rodada
+  }
+
   // ---------- participante ----------
 
   app.post('/api/entrar', (req, reply) => {
-    const rodada = exigirRodada(reply); if (!rodada) return
+    const rodada = exigirNoAr(reply); if (!rodada) return
     const token = req.cookies?.[COOKIE_PARTICIPANTE] ?? randomUUID()
 
     let participante
@@ -171,7 +189,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
 
   // Carimba a exibição da questão: arma a trava e, no relâmpago, o cronômetro.
   app.post('/api/entregar', (req, reply) => {
-    const rodada = exigirRodada(reply); if (!rodada) return
+    const rodada = exigirNoAr(reply); if (!rodada) return
     const participante = participanteDoPedido(req, rodada)
     if (!participante) return reply.code(401).send({ erro: 'sem sessão' })
     marcarEntregue(db, participante.id, req.body?.questaoId)
@@ -179,7 +197,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   })
 
   app.post('/api/responder', (req, reply) => {
-    const rodada = exigirRodada(reply); if (!rodada) return
+    const rodada = exigirNoAr(reply); if (!rodada) return
     const participante = participanteDoPedido(req, rodada)
     if (!participante) return reply.code(401).send({ erro: 'sem sessão' })
 
@@ -197,7 +215,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   })
 
   app.get('/api/meu-resultado', (req, reply) => {
-    const rodada = exigirRodada(reply); if (!rodada) return
+    const rodada = exigirNoAr(reply); if (!rodada) return
     const participante = participanteDoPedido(req, rodada)
     if (!participante) return reply.code(401).send({ erro: 'sem sessão' })
     if (!resultadoLiberado(db, rodada)) {
@@ -209,10 +227,11 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   app.get('/stream', (req, reply) => {
     reply.hijack()
     canais.participantes.inscrever(reply.raw)
-    const rodada = rodadaAtual(db)
-    if (rodada) {
-      reply.raw.write(`event: estado\ndata: ${JSON.stringify(payloadDoParticipante(rodada, resultadoLiberado(db, rodada)))}\n\n`)
-    }
+    const rodada = rodadaNoAr(db)
+    const payload = rodada
+      ? payloadDoParticipante(rodada, resultadoLiberado(db, rodada))
+      : PAYLOAD_SEM_QUIZ
+    reply.raw.write(`event: estado\ndata: ${JSON.stringify(payload)}\n\n`)
   })
 
   // ---------- painel ----------
@@ -256,6 +275,15 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     }
     emitirParticipantes(); emitirPainel()
     return { ok: true }
+  })
+
+  // O interruptor: fora do ar, quem acessar vê a tela de "sem quiz ativo".
+  app.post('/api/painel/no-ar', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    const rodada = exigirRodada(reply); if (!rodada) return
+    definirNoAr(db, rodada.id, Boolean(req.body?.noAr))
+    emitirParticipantes(); emitirPainel()
+    return { noAr: Boolean(req.body?.noAr) }
   })
 
   app.post('/api/painel/entradas', (req, reply) => {

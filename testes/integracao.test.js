@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { abrirBanco } from '../src/db.js'
-import { criarServidor, payloadDoParticipante } from '../src/servidor.js'
+import { criarServidor, payloadDoParticipante, PAYLOAD_SEM_QUIZ } from '../src/servidor.js'
 import { criarRodada, definirFase, zerarRodada } from '../src/rodada.js'
 
 const CHAVE = 'chave-de-teste'
@@ -63,7 +63,7 @@ test('VAZAMENTO: o payload do canal do participante só carrega fase e cronômet
     previsao_participantes: 45, num_questoes_ativas: 10
   })
   assert.deepEqual(Object.keys(payload).sort(),
-    ['animacaoRelampago', 'atalho', 'fase', 'resultadoLiberado', 'rodada',
+    ['animacaoRelampago', 'atalho', 'fase', 'noAr', 'resultadoLiberado', 'rodada',
      'segundosPreparacao', 'segundosRelampago', 'segundosTrava', 'titulo'])
   assert.equal(payload.rodada, 7, 'o cliente precisa perceber quando a rodada trocou')
   assert.equal(payload.resultadoLiberado, false, 'o gate vem fechado por padrão')
@@ -704,4 +704,75 @@ test('TÍTULO: o histórico identifica cada sessão pelo tema', async () => {
   assert.equal(lista[0].titulo, 'Confere ou Confia?')
   const uma = (await a.inject({ url: comChave(`/api/painel/sessoes/${rodada.id}`) })).json()
   assert.equal(uma.titulo, 'Confere ou Confia?')
+})
+
+// ---------- fora do ar ----------
+
+test('SEM QUIZ: banco sem rodada nenhuma recusa o participante com motivo próprio', async () => {
+  const db = abrirBanco(':memory:')
+  const { app } = criarServidor(db, { adminKey: CHAVE })
+  const r = await app.inject({ method: 'POST', url: '/api/entrar' })
+  assert.equal(r.statusCode, 503)
+  assert.equal(r.json().motivo, 'sem_quiz', 'o cliente precisa distinguir isso de entradas fechadas')
+})
+
+test('SEM QUIZ: tirar do ar fecha a porta para todos, inclusive quem já entrou', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+  const cab = { cookie: `pt=${cookie.value}` }
+  definirFase(db, rodada.id, 'encerrado')
+  assert.equal((await a.inject({ url: '/api/meu-resultado', headers: cab })).statusCode, 200, 'antes de tirar do ar via o resultado')
+
+  const fora = await a.inject({ method: 'POST', url: comChave('/api/painel/no-ar'), payload: { noAr: false } })
+  assert.equal(fora.statusCode, 200)
+
+  // Nada mais responde ao participante, nem o resultado de antes.
+  for (const [metodo, url] of [['POST', '/api/entrar'], ['POST', '/api/entregar'], ['POST', '/api/responder'], ['GET', '/api/meu-resultado']]) {
+    const r = await a.inject({ method: metodo, url, headers: cab, payload: {} })
+    assert.equal(r.statusCode, 503, url)
+    assert.equal(r.json().motivo, 'sem_quiz', url)
+  }
+})
+
+test('SEM QUIZ: o atalho continua abrindo a página, que mostra a porta fechada', async () => {
+  const { app: a } = montarApp()
+  assert.equal((await a.inject({ url: '/rt' })).statusCode, 200)
+  await a.inject({ method: 'POST', url: comChave('/api/painel/no-ar'), payload: { noAr: false } })
+  const r = await a.inject({ url: '/rt' })
+  assert.equal(r.statusCode, 200, 'quem tem o link salvo veria um 404 cru do navegador')
+  assert.match(r.body, /quiz\.js/, 'é a página do participante que decide o que mostrar')
+  // Mas a API por trás continua fechada.
+  assert.equal((await a.inject({ method: 'POST', url: '/api/entrar' })).json().motivo, 'sem_quiz')
+})
+
+test('SEM QUIZ: o payload do canal não vaza nada da rodada apagada', () => {
+  assert.deepEqual(PAYLOAD_SEM_QUIZ, { noAr: false })
+})
+
+test('SEM QUIZ: voltar ao ar restaura tudo', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  await a.inject({ method: 'POST', url: comChave('/api/painel/no-ar'), payload: { noAr: false } })
+  assert.equal((await entrar(a)).status, 503)
+  await a.inject({ method: 'POST', url: comChave('/api/painel/no-ar'), payload: { noAr: true } })
+  const volta = await entrar(a)
+  assert.equal(volta.status, 200)
+  assert.equal(volta.corpo.questoes.length, 5)
+})
+
+test('SEM QUIZ: o painel continua funcionando com a dinâmica fora do ar', async () => {
+  const { app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/no-ar'), payload: { noAr: false } })
+  const estado = (await a.inject({ url: comChave('/api/painel/estado') })).json()
+  assert.equal(estado.noAr, false, 'o host precisa ver em que estado está')
+  assert.equal((await a.inject({ url: comChave('/api/painel/sessoes') })).statusCode, 200)
+  assert.equal((await a.inject({ url: comChave('/api/painel/questoes') })).statusCode, 200)
+})
+
+test('SEM QUIZ: a rodada nasce no ar', async () => {
+  const { app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/rodada'), payload: { previsaoParticipantes: 20 } })
+  assert.equal((await a.inject({ url: comChave('/api/painel/estado') })).json().noAr, true)
 })
