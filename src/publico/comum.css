@@ -212,9 +212,9 @@ dialog#modal .modal-acoes .acao { font-size: 14px; padding: 13px 18px; }
 .chamada svg { width: min(52vw, 240px); height: auto; position: relative; z-index: 1;
                animation: raio-entra 620ms cubic-bezier(.2, .9, .2, 1) forwards; }
 .chamada .rotulo {
-  position: absolute; bottom: 16vh; z-index: 1;
+  position: absolute; bottom: 12vh; z-index: 1; text-align: center; line-height: .96;
   font-family: var(--display); font-variation-settings: 'wdth' 116, 'wght' 800;
-  text-transform: uppercase; font-size: clamp(22px, 7vw, 42px); color: var(--navy-escuro);
+  text-transform: uppercase; font-size: clamp(26px, 8.5vw, 54px); color: var(--navy-escuro);
   animation: rotulo-entra 500ms 120ms both;
 }
 @keyframes clarao {

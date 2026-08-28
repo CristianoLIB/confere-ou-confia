@@ -65,8 +65,8 @@ Restrições do contexto:
    (5s por padrão). Depender do clique fazia cada um chegar ao relâmpago num
    momento diferente. Quem está no grupo do cronômetro lê ali que a próxima tem
    10 segundos; para o outro grupo a tela não menciona tempo nenhum.
-6. Uma **chamada** cobre a tela por um instante anunciando o relâmpago — um raio
-   com clarão, só o clarão, ou nada, à escolha do painel. Ela toca **antes** de
+6. Uma **chamada** cobre a tela por um instante anunciando *"Pergunta
+   Relâmpago!"* — um raio com clarão, só o clarão, ou nada, à escolha do painel. Ela toca **antes** de
    a pergunta ser entregue: o cronômetro começa cheio, depois que ela sai.
 7. **Todos** recebem então a **pergunta relâmpago** — a mesma pergunta para o
    público inteiro. Só muda uma coisa: metade vê um cronômetro de 10s correndo,

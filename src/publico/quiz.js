@@ -81,7 +81,7 @@ function tocarChamada () {
   if (modo === 'nenhuma') return Promise.resolve()
   const capa = document.createElement('div')
   capa.className = `chamada ${modo}`
-  capa.innerHTML = `<div class="clarao"></div>${RAIO_SVG}<div class="rotulo">Relâmpago</div>`
+  capa.innerHTML = `<div class="clarao"></div>${RAIO_SVG}<div class="rotulo">Pergunta<br>Relâmpago!</div>`
   document.body.appendChild(capa)
   return new Promise(resolve => {
     setTimeout(() => { capa.remove(); resolve() }, 1250)

@@ -315,6 +315,10 @@ test('a tela de preparação avança sozinha, sem depender do clique', () => {
   assert.ok(!/id="pronto"|addEventListener\('click'/.test(bloco), 'não pode depender de um botão')
 })
 
+test('a chamada anuncia a pergunta relâmpago por escrito', () => {
+  assert.match(ler('quiz.js'), /Pergunta<br>Relâmpago!/, 'o rótulo da chamada precisa nomear a pergunta')
+})
+
 test('a chamada do relâmpago existe, é configurável e não come o cronômetro', () => {
   const fonte = ler('quiz.js')
   assert.match(fonte, /function tocarChamada/)
