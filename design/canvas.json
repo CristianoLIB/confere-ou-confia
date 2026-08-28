@@ -1,0 +1,73 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 720,
+      "title": "Telão — projetado no Zoom",
+      "is_interactive": true
+    },
+    {
+      "file": "Quiz.dc.html",
+      "x": 1400,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Participante — celular",
+      "is_interactive": true
+    },
+    {
+      "file": "Painel.dc.html",
+      "x": 1910,
+      "y": 0,
+      "w": 900,
+      "h": 820,
+      "title": "Painel — só o apresentador",
+      "is_interactive": true
+    },
+    {
+      "file": "QuizDesktop.dc.html",
+      "x": 0,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Participante — desktop",
+      "is_interactive": true
+    }
+  ],
+  "annotations": [
+    {
+      "id": "nota-marca",
+      "x": 0,
+      "y": -210,
+      "w": 640,
+      "text": "Marca real do LIB, extraída dos outputs do Figma: navy #29235c, laranja #ff8000, teal #169194, indigo #394195.\nNo gráfico: branco = acertou, laranja = escorregou, lilás = não respondeu a tempo. Validado sobre o campo navy — ΔE 19,1 em daltonismo, os três acima de 3:1 de contraste."
+    },
+    {
+      "id": "nota-dados",
+      "x": 700,
+      "y": -210,
+      "w": 580,
+      "text": "Números de exemplo, não medidos. O A/B do relâmpago está desenhado com o efeito aparecendo (50% contra 77%) — na reunião pode não aparecer, e o penúltimo passo precisa funcionar mesmo assim."
+    },
+    {
+      "id": "nota-tipo",
+      "x": 1400,
+      "y": -210,
+      "w": 390,
+      "text": "Archivo (grotesca variável, peso 800, largura 116) nos blocos de display; Inter — a fonte da marca — no texto corrido."
+    },
+    {
+      "id": "nota-botoes",
+      "x": 1520,
+      "y": 1000,
+      "w": 420,
+      "text": "Os dois quadros do participante são o MESMO componente, não duas telas.\n\nTRAVA DE ARMAÇÃO: a situação aparece e os botões ficam mortos por 4s (ajustável de 3 a 5 no controle acima). Enquanto isso, uma faixa avisa o que está acontecendo e uma linha laranja preenche. Sem isso, quem clica por reflexo contamina o placar.\n\nTELA DE PREPARAÇÃO antes do relâmpago: os dois grupos passam por ela e pressionam 'Estou pronto'. Só o grupo com cronômetro lê o aviso dos 10 segundos — para o outro a tela não menciona tempo nenhum. O relâmpago não tem trava: esta tela já fez esse papel, e comer 4 dos 10 segundos mataria a pergunta.\n\nBotões lado a lado por padrão (só empilham abaixo de ~305px). Relevo em bloco deslocado de aresta dura; travado ou desabilitado ele perde o relevo, porque não é apertável.\n\nNo relâmpago os dois marcadores são navy de propósito: colorir 'confiro' de laranja empurraria a sala para a resposta certa e contaminaria o A/B."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

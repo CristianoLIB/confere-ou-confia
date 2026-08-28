@@ -1,0 +1,359 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #1d1846; color: #ffffff;
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      overflow: hidden;
+    }
+    a { color: #ff8000; } a:hover { color: #e67300; }
+    .cartaz {
+      display: grid; gap: 3px; background: #1d1846;
+      width: 100vw; height: 100vh;
+      grid-template-columns: repeat(12, 1fr);
+      grid-template-rows: 44px repeat(6, 1fr);
+    }
+    .campo { padding: 26px 30px; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+    .navy   { background: #29235c; color: #ffffff; }
+    .branco { background: #ffffff; color: #29235c; }
+    .laranja{ background: #ff8000; color: #1d1846; }
+    .teal   { background: #169194; color: #ffffff; }
+    .disp {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 118, 'wght' 800;
+      line-height: .92; letter-spacing: -.02em; text-transform: uppercase; margin: 0;
+    }
+    .num {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 112, 'wght' 800;
+      line-height: .8; letter-spacing: -.045em; font-variant-numeric: tabular-nums;
+    }
+    .etiq { font-size: 12px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
+    .cabeca {
+      grid-column: 1 / 13; background: #29235c; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 30px; color: #8b87ad;
+    }
+    .cabeca strong { color: #ffffff; font-weight: 600; }
+    .trilho { display: flex; gap: 3px; background: #1d1846; width: 100%; }
+    .parte { display: flex; align-items: center; padding: 0 12px; font-size: 15px; font-weight: 600;
+             font-variant-numeric: tabular-nums; min-width: 0; }
+    .p-acerto  { background: #ffffff; color: #29235c; }
+    .p-erro    { background: #ff8000; color: #1d1846; }
+    .p-expirou { background: #8b87ad; color: #1d1846; }
+    .chave { display: flex; gap: 26px; flex-wrap: wrap; font-size: 13px; font-weight: 500; color: #c9c6de; }
+    .chave span { display: flex; align-items: center; gap: 9px; }
+    .quadrado { width: 13px; height: 13px; display: block; }
+  </style>
+</helmet>
+
+<div class="cartaz">
+
+  <div class="cabeca etiq"><span><strong>Confere ou Confia?</strong>&nbsp;&nbsp;Lean Institute Brasil</span><span>{{ contador }}</span></div>
+
+  <sc-if value="{{ ehEspera }}" hint-placeholder-val="{{ true }}">
+    <div class="campo navy" style="grid-column: 1 / 8; grid-row: 2 / 5; justify-content: flex-end">
+      <h1 class="disp" style="font-size: 96px">Confere<br><span style="color: #ff8000">ou</span> confia?</h1>
+    </div>
+    <div class="campo laranja" style="grid-column: 8 / 13; grid-row: 2 / 5; justify-content: space-between">
+      <div class="etiq">O link está no chat</div>
+      <div class="disp" style="font-size: 30px; letter-spacing: -.01em; text-transform: none">dinamica.lean.org.br</div>
+    </div>
+    <div class="campo branco" style="grid-column: 1 / 8; grid-row: 5 / 8; justify-content: flex-end">
+      <div class="num" style="font-size: 158px">{{ dados.conectados }}</div>
+      <div class="etiq" style="margin-top: 18px; color: #5b5880">conectados</div>
+    </div>
+    <div class="campo teal" style="grid-column: 8 / 13; grid-row: 5 / 8; justify-content: flex-end">
+      <div class="disp" style="font-size: 34px">Quatro<br>situações.<br>Duas saídas.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehRespondendo }}" hint-placeholder-val="{{ true }}">
+    <div class="campo navy" style="grid-column: 1 / 13; grid-row: 2 / 4; justify-content: center">
+      <h1 class="disp" style="font-size: 60px">Ninguém vê resultado<br>ainda. <span style="color: #ff8000">Nem eu.</span></h1>
+    </div>
+    <div class="campo branco" style="grid-column: 1 / 5; grid-row: 4 / 8; justify-content: flex-end">
+      <div class="num" style="font-size: 132px">{{ dados.conectados }}</div>
+      <div class="etiq" style="margin-top: 16px; color: #5b5880">conectados</div>
+    </div>
+    <div class="campo laranja" style="grid-column: 5 / 9; grid-row: 4 / 8; justify-content: flex-end">
+      <div class="num" style="font-size: 132px">{{ dados.respondendo }}</div>
+      <div class="etiq" style="margin-top: 16px">respondendo</div>
+    </div>
+    <div class="campo teal" style="grid-column: 9 / 13; grid-row: 4 / 8; justify-content: flex-end">
+      <div class="num" style="font-size: 132px">{{ dados.finalizados }}</div>
+      <div class="etiq" style="margin-top: 16px">finalizados</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehPlacar }}" hint-placeholder-val="{{ true }}">
+    <div class="campo laranja" style="grid-column: 1 / 7; grid-row: 2 / 8; justify-content: center">
+      <div class="num" style="font-size: 224px">{{ heroi }}%</div>
+    </div>
+    <div class="campo navy" style="grid-column: 7 / 13; grid-row: 2 / 5; justify-content: flex-end">
+      <h1 class="disp" style="font-size: 66px">O resultado<br>da sala</h1>
+    </div>
+    <div class="campo branco" style="grid-column: 7 / 13; grid-row: 5 / 8; justify-content: space-between">
+      <div style="font-size: 22px; line-height: 1.35; font-weight: 500">de acerto na escolha entre buscar e redigir</div>
+      <div class="etiq" style="color: #5b5880">{{ dados.decisoes }} decisões · {{ dados.finalizados }} pessoas</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehCategorias }}" hint-placeholder-val="{{ true }}">
+    <div class="campo branco" style="grid-column: 1 / 13; grid-row: 2 / 3; justify-content: center">
+      <h1 class="disp" style="font-size: 38px">Onde vocês foram bem, e onde escorregaram</h1>
+    </div>
+    <div class="campo navy" style="grid-column: 1 / 13; grid-row: 3 / 8; justify-content: space-between">
+      <div style="display: grid; gap: 15px">
+        <sc-for list="{{ categorias }}" as="c" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 290px 1fr 92px; gap: 20px; align-items: center">
+            <div style="font-size: 17px; font-weight: 500; color: #ffffff">{{ c.nome }}</div>
+            <div class="trilho" style="height: 44px">
+              <div class="parte p-acerto" style="flex: 0 0 {{ c.largAcerto }}">{{ c.acertos }}</div>
+              <div class="parte p-erro" style="flex: 0 0 {{ c.largErro }}">{{ c.erros }}</div>
+            </div>
+            <div class="etiq" style="color: #8b87ad; text-align: right; font-variant-numeric: tabular-nums">n {{ c.total }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div class="chave">
+        <span><i class="quadrado" style="background: #ffffff"></i>Acertou</span>
+        <span><i class="quadrado" style="background: #ff8000"></i>Escorregou</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehArmadilha }}" hint-placeholder-val="{{ true }}">
+    <div class="campo laranja" style="grid-column: 1 / 6; grid-row: 2 / 8; justify-content: space-between">
+      <div class="etiq">Armadilha</div>
+      <div>
+        <div class="num" style="font-size: 172px">{{ armadilha.erroPct }}%</div>
+        <div class="disp" style="font-size: 30px; margin-top: 20px">escorregou<br>aqui</div>
+      </div>
+      <div class="etiq">n {{ armadilha.total }} respostas</div>
+    </div>
+    <div class="campo navy" style="grid-column: 6 / 13; grid-row: 2 / 6; justify-content: space-between">
+      <p style="font-size: 27px; line-height: 1.32; font-weight: 500; margin: 0">{{ armadilha.texto }}</p>
+      <div>
+        <div class="trilho" style="height: 40px; margin-bottom: 14px">
+          <div class="parte p-acerto" style="flex: 0 0 {{ armadilha.largAcerto }}">{{ armadilha.acertos }}</div>
+          <div class="parte p-erro" style="flex: 0 0 {{ armadilha.largErro }}">{{ armadilha.erros }}</div>
+        </div>
+        <div class="chave">
+          <span><i class="quadrado" style="background: #ffffff"></i>Acertou</span>
+          <span><i class="quadrado" style="background: #ff8000"></i>Escorregou</span>
+        </div>
+      </div>
+    </div>
+    <div class="campo branco" style="grid-column: 6 / 13; grid-row: 6 / 8; justify-content: space-between">
+      <div style="display: flex; align-items: center; gap: 13px">
+        <sc-if value="{{ armadilha.ehBusca }}" hint-placeholder-val="{{ true }}">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff8000" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.6-4.6"></path></svg>
+        </sc-if>
+        <sc-if value="{{ armadilha.ehRedacao }}" hint-placeholder-val="{{ true }}">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff8000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3z"></path><path d="M13.5 6.5l4 4"></path></svg>
+        </sc-if>
+        <div class="disp" style="font-size: 27px">{{ armadilha.veredito }}</div>
+      </div>
+      <p style="font-size: 18px; line-height: 1.42; margin: 0; color: #5b5880; font-weight: 500">{{ armadilha.regra }}</p>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehRelampago }}" hint-placeholder-val="{{ true }}">
+    <div class="campo branco" style="grid-column: 1 / 13; grid-row: 2 / 3; justify-content: center">
+      <h1 class="disp" style="font-size: 38px">A mesma pergunta. Só mudou o cronômetro.</h1>
+    </div>
+    <div class="campo navy" style="grid-column: 1 / 13; grid-row: 3 / 7; justify-content: space-between">
+      <sc-for list="{{ grupos }}" as="g" hint-placeholder-count="2">
+        <div>
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px">
+            <div class="disp" style="font-size: 30px; color: {{ g.cor }}">{{ g.nome }}</div>
+            <div class="num" style="font-size: 58px; color: {{ g.cor }}">{{ g.pct }}%</div>
+          </div>
+          <div class="trilho" style="height: 46px">
+            <div class="parte p-acerto" style="flex: 0 0 {{ g.largAcerto }}">{{ g.acertos }}</div>
+            <div class="parte p-erro" style="flex: 0 0 {{ g.largErro }}">{{ g.erros }}</div>
+            <div class="parte p-expirou" style="flex: 0 0 {{ g.largExpirou }}">{{ g.expiradosRotulo }}</div>
+          </div>
+        </div>
+      </sc-for>
+      <div class="chave">
+        <span><i class="quadrado" style="background: #ffffff"></i>Acertou</span>
+        <span><i class="quadrado" style="background: #ff8000"></i>Escorregou</span>
+        <span><i class="quadrado" style="background: #8b87ad"></i>Não respondeu a tempo</span>
+      </div>
+    </div>
+    <div class="campo laranja" style="grid-column: 1 / 13; grid-row: 7 / 8; justify-content: center">
+      <div class="disp" style="font-size: 32px">Se veio com link, abra o link. São trinta segundos.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehFechamento }}" hint-placeholder-val="{{ true }}">
+    <div class="campo navy" style="grid-column: 1 / 7; grid-row: 2 / 8; justify-content: flex-end">
+      <div class="disp" style="font-size: 78px">O Google<br>busca.<br><span style="color: #8b87ad">A IA<br>redige.</span></div>
+    </div>
+    <div class="campo branco" style="grid-column: 7 / 13; grid-row: 2 / 4; justify-content: center">
+      <div class="disp" style="font-size: 46px">Confiar<br>é ótimo.</div>
+    </div>
+    <div class="campo laranja" style="grid-column: 7 / 13; grid-row: 4 / 8; justify-content: center">
+      <div class="disp" style="font-size: 62px">Conferir é<br>obrigatório.</div>
+    </div>
+  </sc-if>
+
+  <div style="position: fixed; right: 14px; bottom: 14px; display: flex; gap: 3px; align-items: stretch; background: #1d1846">
+    <button onClick="{{ voltar }}" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 30px; border: none; background: #29235c; color: #8b87ad; cursor: pointer; padding: 0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+    </button>
+    <div style="display: flex; align-items: center; padding: 0 14px; background: #29235c; color: #8b87ad; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase">{{ nomePasso }}</div>
+    <button onClick="{{ avancar }}" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 30px; border: none; background: #ff8000; color: #1d1846; cursor: pointer; padding: 0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+    </button>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { passo: 0, heroi: 0 };
+  }
+
+  dados() {
+    return { conectados: 48, respondendo: 4, finalizados: 44, decisoes: 176, acertos: 132, pct: 75 };
+  }
+
+  categorias() {
+    return [
+      { nome: 'síntese de material próprio', total: 40, acertos: 36 },
+      { nome: 'adaptação de linguagem',      total: 35, acertos: 30 },
+      { nome: 'geração de ideias',           total: 34, acertos: 24 },
+      { nome: 'citação e fonte',             total: 33, acertos: 22 },
+      { nome: 'norma ou prazo',              total: 18, acertos: 12 },
+      { nome: 'dado estatístico',            total: 16, acertos: 8  }
+    ].map(function (c) {
+      var erros = c.total - c.acertos;
+      return {
+        nome: c.nome, total: c.total, acertos: c.acertos, erros: erros,
+        largAcerto: (c.acertos / c.total * 100) + '%',
+        largErro: (erros / c.total * 100) + '%'
+      };
+    });
+  }
+
+  armadilhas() {
+    return [
+      { gabarito: 'busca', total: 17, acertos: 5,
+        texto: 'Você quer resumir para a equipe um artigo da Harvard Business Review sobre gestão visual. Você tem o título e o autor, mas não tem o PDF.',
+        regra: 'Parece resumir. Mas ela não leu o artigo — vai redigir um resumo plausível de algo que não viu.' },
+      { gabarito: 'redacao', total: 17, acertos: 7,
+        texto: 'Você precisa de 15 perguntas para uma entrevista de diagnóstico com líderes de produção.',
+        regra: 'Não há fato a verificar. É geração pura. Muita gente marca busca por insegurança.' },
+      { gabarito: 'busca', total: 16, acertos: 8,
+        texto: 'Você quer abrir a proposta com um dado de impacto: quanto o TPS reduziu o lead time nos primeiros anos da Toyota. A IA devolve o percentual com livro, autor e ano.',
+        regra: 'Dado com citação é onde a alucinação chega mais convincente. O estudo pode simplesmente não existir.' }
+    ].map(function (a) {
+      var erros = a.total - a.acertos;
+      return {
+        texto: a.texto, regra: a.regra, total: a.total, acertos: a.acertos, erros: erros,
+        erroPct: Math.round(erros / a.total * 100),
+        ehBusca: a.gabarito === 'busca',
+        ehRedacao: a.gabarito === 'redacao',
+        veredito: a.gabarito === 'busca' ? 'Isso era busca' : 'Isso era redação',
+        largAcerto: (a.acertos / a.total * 100) + '%',
+        largErro: (erros / a.total * 100) + '%'
+      };
+    });
+  }
+
+  grupos() {
+    return [
+      { nome: 'Com 10 segundos', total: 22, acertos: 11, expirados: 3, cor: '#ff8000' },
+      { nome: 'Sem cronômetro',  total: 22, acertos: 17, expirados: 0, cor: '#ffffff' }
+    ].map(function (g) {
+      var erros = g.total - g.acertos - g.expirados;
+      return {
+        nome: g.nome, total: g.total, acertos: g.acertos, erros: erros, cor: g.cor,
+        pct: Math.round(g.acertos / g.total * 100),
+        expiradosRotulo: g.expirados > 0 ? String(g.expirados) : '',
+        largAcerto: (g.acertos / g.total * 100) + '%',
+        largErro: (erros / g.total * 100) + '%',
+        largExpirou: (g.expirados / g.total * 100) + '%'
+      };
+    });
+  }
+
+  // 6 telas fixas (espera, respondendo, placar, categorias, relâmpago,
+  // fechamento) mais uma por armadilha.
+  totalPassos() { return 6 + this.armadilhas().length; }
+
+  nomeDoPasso(p) {
+    var armas = this.armadilhas().length;
+    if (p === 0) return 'Sala de espera';
+    if (p === 1) return 'Respondendo';
+    if (p === 2) return 'Placar';
+    if (p === 3) return 'Categorias';
+    if (p < 4 + armas) return 'Armadilha ' + (p - 3);
+    if (p === 4 + armas) return 'Relâmpago';
+    return 'Fechamento';
+  }
+
+  // Sobe o número em vez de estampá-lo: é o momento da revelação.
+  animarHeroi() {
+    var self = this;
+    var alvo = this.dados().pct;
+    var inicio = Date.now();
+    if (this.anim) clearInterval(this.anim);
+    this.setState({ heroi: 0 });
+    this.anim = setInterval(function () {
+      var t = Math.min(1, (Date.now() - inicio) / 1500);
+      var suave = 1 - Math.pow(1 - t, 3);
+      self.setState({ heroi: Math.round(alvo * suave) });
+      if (t >= 1) { clearInterval(self.anim); self.anim = null; }
+    }, 40);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.passo === 2 && prevState.passo !== 2) this.animarHeroi();
+  }
+
+  componentWillUnmount() { if (this.anim) clearInterval(this.anim); }
+
+  renderVals() {
+    var self = this;
+    var p = this.state.passo;
+    var armas = this.armadilhas().length;
+    var ultimo = this.totalPassos() - 1;
+
+    return {
+      dados: this.dados(),
+      categorias: this.categorias(),
+      grupos: this.grupos(),
+      armadilha: this.armadilhas()[Math.max(0, Math.min(armas - 1, p - 4))],
+      heroi: this.state.heroi,
+      contador: (p + 1) + ' / ' + this.totalPassos(),
+      nomePasso: this.nomeDoPasso(p),
+      ehEspera: p === 0,
+      ehRespondendo: p === 1,
+      ehPlacar: p === 2,
+      ehCategorias: p === 3,
+      ehArmadilha: p >= 4 && p < 4 + armas,
+      ehRelampago: p === 4 + armas,
+      ehFechamento: p === 5 + armas,
+      avancar: function () { self.setState({ passo: Math.min(ultimo, self.state.passo + 1) }); },
+      voltar: function () { self.setState({ passo: Math.max(0, self.state.passo - 1) }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -20,35 +20,78 @@
 - Fases da rodada, exatamente estas três: `espera`, `respondendo`, `revelado`.
 - Gabaritos possíveis: `busca`, `redacao` (as 20 questões) e `confiro` (a relâmpago).
 - Escolhas possíveis: `busca`, `redacao`, `confio`, `confiro`, `expirou`.
-- Tema **único escuro** nas três telas. Paleta fixa abaixo, já validada — não substituir cores sem revalidar.
+- **Trava de armação**: uma resposta que chegue antes de `segundos_trava` (padrão 4s) é recusada com `cedo_demais` e **não é gravada**. Vale para as 4 situações normais; a questão relâmpago é isenta.
+- Identidade visual do LIB, em composição de cartaz suíço. Paleta e tipografia fixas abaixo — não substituir cores sem revalidar.
 - Testes com `node:test` + `node:assert/strict`, executados por `npm test`.
 
-### Paleta (fixa, validada)
+### Sistema visual (fixo, validado)
 
-Superfície escura `#1a1a19`. Validada com o script do skill dataviz em `--mode dark --pairs all`: separação CVD ΔE 26.8 e visão normal ΔE 31.8 entre acerto e erro.
+Cores da marca do LIB, extraídas de `figma-to-bootstrap/outputs/` — não inventadas.
 
 ```css
---plano:      #0d0d0d;   /* fundo da página */
---superficie: #1a1a19;   /* cartões e superfície de gráfico */
---tinta:      #ffffff;   /* texto primário */
---tinta-2:    #c3c2b7;   /* texto secundário */
---tinta-3:    #898781;   /* rótulos de eixo, texto discreto */
---grade:      #2c2c2a;   /* linhas de grade */
---acerto:     #3987e5;   /* azul */
---erro:       #d95926;   /* laranja */
---expirou:    #898781;   /* cinza neutro */
+--navy:        #29235c;   /* campo dominante */
+--navy-escuro: #1d1846;   /* fundo da página e filetes do grid */
+--laranja:     #ff8000;   /* sinal, e o segmento de erro */
+--teal:        #169194;   /* campo secundário */
+--branco:      #ffffff;   /* campo claro, e o segmento de acerto */
+--lilas:       #8b87ad;   /* texto discreto, e "não respondeu a tempo" */
+--claro:       #e3e5ee;   /* estado desabilitado sobre branco */
 ```
 
-**Por que não verde e vermelho.** É a escolha intuitiva para acerto/erro e falha o gate de daltonismo: ΔE 4.1 em deuteranopia, bem abaixo do piso de 8. Com 50 pessoas na sala, haveria muito provavelmente alguém incapaz de ler o gráfico. Azul e laranja carregam a mesma informação e passam com folga.
+**Composição.** Grade de 12 colunas, campos de cor chapados encostados uns nos
+outros, separados por filetes de **3px** na cor do fundo. Sem canto arredondado,
+sem sombra difusa, sem gradiente, em nenhum lugar. O mesmo filete de 3px que
+separa os campos separa os segmentos das barras — o gráfico é parte da
+composição, não um widget colado por cima.
 
-`--expirou` é cinza de propósito: "não respondeu a tempo" deve ler como ausência, não como uma terceira identidade. O validador marca o piso de croma nele — é a exceção deliberada de um neutro, e todos os gates de separação e contraste passam.
+**Tipografia.** Uma folha do Google Fonts, o único host externo permitido:
 
-**Regras de marca** (do skill dataviz, valem para todo gráfico deste projeto):
-- Barras horizontais empilhadas, cantos de 4px só na ponta do dado, ancoradas na linha de base.
-- Vão de 2px na cor da superfície entre segmentos empilhados e entre barras vizinhas.
-- Legenda sempre presente (são 3 séries) **e** rótulos diretos nos segmentos com largura suficiente. A identidade nunca depende só da cor — importa porque o telão é projetado via Zoom e ninguém do público tem mouse para passar por cima.
-- Sem camada de hover no telão (não há ponteiro do lado do espectador); os rótulos diretos compensam. O painel, esse sim, pode ter hover.
-- Eixos e grade recessivos. Números grandes em `system-ui`, sem fonte de display.
+```html
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&display=swap">
+```
+
+- **Archivo** `font-variation-settings: 'wdth' 116, 'wght' 800`, caixa alta,
+  `line-height: .95` — blocos de display e todos os números.
+- **Inter** — a fonte da marca — no texto corrido.
+- Reserva `'Helvetica Neue', Arial, sans-serif` nas duas: a exportação em PNG/PDF
+  não embute webfont, então a reserva precisa ter métrica parecida.
+
+**Cores dos gráficos**, sobre o campo navy `#29235c`:
+
+| Papel | Cor |
+|---|---|
+| Acertou | branco `#ffffff` |
+| Escorregou | laranja `#ff8000` |
+| Não respondeu a tempo | lilás `#8b87ad` |
+
+Validadas com `scripts/validate_palette.js` do skill `dataviz` em
+`--mode dark --surface "#29235c" --pairs all`: separação em daltonismo ΔE 19,1,
+visão normal ΔE 24,0, as três acima de 3:1 de contraste.
+
+**Por que o laranja fica no erro.** É a cor que puxa o olho, e o debrief inteiro
+trata de onde a sala escorregou. Verde e vermelho, a dupla intuitiva, reprova o
+gate de daltonismo com ΔE 4,1 em deuteranopia — com 50 pessoas na sala haveria
+muito provavelmente alguém incapaz de ler o gráfico.
+
+O lilás é cinza de propósito: "não respondeu a tempo" deve ler como ausência, não
+como uma terceira identidade. O validador marca o piso de croma nele — é a
+exceção deliberada de um neutro, e todos os gates de separação e contraste passam.
+
+**Regras de marca** (do skill `dataviz`, valem para todo gráfico do projeto):
+- Barras horizontais empilhadas, ancoradas na linha de base.
+- Filete de 3px na cor do fundo entre segmentos e entre barras vizinhas.
+- Legenda sempre presente **e** rótulo direto dentro de cada segmento com largura
+  suficiente. A identidade nunca depende só da cor — importa porque o telão é
+  projetado via Zoom e ninguém do público tem mouse para passar por cima.
+- Sem camada de hover no telão; os rótulos diretos compensam.
+
+**Botões.** Relevo em bloco deslocado de **aresta dura** — `box-shadow: 6px 6px
+0` no celular, `9px 9px 0` acima de 700px, nunca com desfoque. No hover encolhe
+e vira laranja; no clique some e o botão anda os 6px. Travado ou desabilitado ele
+**perde o relevo**: se não dá para apertar, não deve parecer que dá.
+
+O protótipo navegável das quatro telas está em `design/confere-ou-confia.html`.
+Use-o como referência visual ao montar as telas das Tasks 9 a 11.
 
 ---
 
@@ -270,6 +313,7 @@ CREATE TABLE IF NOT EXISTS rodada (
                          CHECK (fase IN ('espera','respondendo','revelado')),
   entradas_abertas       INTEGER NOT NULL DEFAULT 1,
   segundos_relampago     INTEGER NOT NULL DEFAULT 10,
+  segundos_trava         INTEGER NOT NULL DEFAULT 4,
   passo_debrief          INTEGER NOT NULL DEFAULT 0
 );
 
@@ -663,7 +707,7 @@ rtk git commit -m "feat: rodízio equilibrado de questões e divisão A/B do rel
   - `rodadaAtual(db) -> rodada | undefined`
   - `entrarParticipante(db, rodadaId, token, aleatorio?) -> { participante, novo: boolean }`
   - `questoesDoParticipante(db, participanteId) -> [{ id, texto, posicao, eRelampago, comCronometro }]` — **nunca** devolve `gabarito` nem `explicacao`
-  - `marcarEntregue(db, participanteId, questaoId, agora?)`
+  - `marcarEntregue(db, participanteId, questaoId, agora?)` — carimba `entregue_em` uma única vez; é o que arma a trava e, no relâmpago, o cronômetro. O cliente chama para **toda** questão ao exibi-la.
   - `definirFase(db, rodadaId, fase)`, `definirEntradas(db, rodadaId, abertas)`, `definirPassoDebrief(db, rodadaId, passo)`
   - `zerarRodada(db, rodadaId)`
 
@@ -840,6 +884,7 @@ export function criarRodada (db, {
   previsaoParticipantes,
   numQuestoesAtivas,
   segundosRelampago = 10,
+  segundosTrava = 4,
   aleatorio = Math.random
 }) {
   const k = numQuestoesAtivas ?? calcularQuestoesAtivas(previsaoParticipantes)
@@ -850,9 +895,10 @@ export function criarRodada (db, {
 
   return db.transaction(() => {
     const info = db.prepare(`
-      INSERT INTO rodada (criada_em, previsao_participantes, num_questoes_ativas, segundos_relampago)
-      VALUES (?, ?, ?, ?)
-    `).run(new Date().toISOString(), previsaoParticipantes, k, segundosRelampago)
+      INSERT INTO rodada (criada_em, previsao_participantes, num_questoes_ativas,
+                          segundos_relampago, segundos_trava)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(new Date().toISOString(), previsaoParticipantes, k, segundosRelampago, segundosTrava)
     const inserir = db.prepare('INSERT INTO rodada_questao (rodada_id, questao_id) VALUES (?, ?)')
     for (const q of [...ativas, relampago]) inserir.run(info.lastInsertRowid, q.id)
     return db.prepare('SELECT * FROM rodada WHERE id = ?').get(info.lastInsertRowid)
@@ -988,7 +1034,7 @@ rtk git commit -m "feat: ciclo de vida da rodada e entrada com retomada por toke
 **Interfaces:**
 - Consumes: `abrirBanco` (Task 1); `criarRodada`, `entrarParticipante`, `questoesDoParticipante`, `marcarEntregue`, `definirFase` (Task 4).
 - Produces:
-  - `registrarResposta(db, { participanteId, questaoId, escolha, msParaResponder?, agora? }) -> { registrado: boolean, motivo?: string, escolhaGravada?: string }` — motivos: `nao_atribuida`, `fase_invalida`, `escolha_invalida`, `ja_respondida`.
+  - `registrarResposta(db, { participanteId, questaoId, escolha, msParaResponder?, agora? }) -> { registrado: boolean, motivo?: string, escolhaGravada?: string }` — motivos: `nao_atribuida`, `fase_invalida`, `escolha_invalida`, `cedo_demais`, `ja_respondida`.
   - `marcarFinalizadoSeCompleto(db, participanteId, agora?) -> boolean`
   - `resultadoPessoal(db, participanteId) -> { acertos, total, itens: [{ texto, escolha, gabarito, explicacao, correta }] }`
 
@@ -1124,6 +1170,48 @@ test('o grupo controle não sofre expiração, por mais que demore', () => {
   assert.equal(r.escolhaGravada, 'confiro')
 })
 
+test('A TRAVA DE ARMAÇÃO: resposta antes do prazo é recusada e nada é gravado', () => {
+  const { db, participante, questoes, gabaritoDe } = cenario()
+  const q = questoes[0]
+  const apareceu = new Date('2026-08-27T10:00:00Z')
+  marcarEntregue(db, participante.id, q.id, apareceu)
+
+  const cedo = registrarResposta(db, {
+    participanteId: participante.id, questaoId: q.id, escolha: gabaritoDe(q.id),
+    agora: new Date(apareceu.getTime() + 2_000)
+  })
+  assert.equal(cedo.registrado, false)
+  assert.equal(cedo.motivo, 'cedo_demais')
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM resposta').get().c, 0)
+
+  const noPrazo = registrarResposta(db, {
+    participanteId: participante.id, questaoId: q.id, escolha: gabaritoDe(q.id),
+    agora: new Date(apareceu.getTime() + 4_100)
+  })
+  assert.equal(noPrazo.registrado, true)
+  assert.equal(db.prepare('SELECT correta FROM resposta').get().correta, 1)
+})
+
+test('a trava não se aplica ao relâmpago: 4s dos 10 matariam a pergunta', () => {
+  const { db, participante, questoes } = cenario('cronometro')
+  const rel = questoes[4]
+  const apareceu = new Date('2026-08-27T10:00:00Z')
+  marcarEntregue(db, participante.id, rel.id, apareceu)
+  const r = registrarResposta(db, {
+    participanteId: participante.id, questaoId: rel.id, escolha: 'confiro',
+    agora: new Date(apareceu.getTime() + 1_500)
+  })
+  assert.equal(r.registrado, true)
+  assert.equal(r.escolhaGravada, 'confiro')
+})
+
+test('sem entregue_em a trava não bloqueia: a questão nunca foi exibida', () => {
+  const { db, participante, questoes, gabaritoDe } = cenario()
+  const q = questoes[0]
+  const r = registrarResposta(db, { participanteId: participante.id, questaoId: q.id, escolha: gabaritoDe(q.id) })
+  assert.equal(r.registrado, true)
+})
+
 test('o participante só é marcado como finalizado depois das 5 respostas', () => {
   const { db, participante, questoes, gabaritoDe } = cenario()
   for (const q of questoes.slice(0, 4)) {
@@ -1178,7 +1266,7 @@ export function registrarResposta (db, {
 }) {
   const contexto = db.prepare(`
     SELECT a.entregue_em, q.gabarito, q.e_relampago,
-           p.grupo_relampago, r.fase, r.segundos_relampago
+           p.grupo_relampago, r.fase, r.segundos_relampago, r.segundos_trava
     FROM atribuicao a
     JOIN questao q      ON q.id = a.questao_id
     JOIN participante p ON p.id = a.participante_id
@@ -1191,6 +1279,16 @@ export function registrarResposta (db, {
 
   const permitidas = contexto.e_relampago ? ESCOLHAS_RELAMPAGO : ESCOLHAS_NORMAIS
   if (!permitidas.includes(escolha)) return { registrado: false, motivo: 'escolha_invalida' }
+
+  // Trava de armação: resposta cedo demais é reflexo, não decisão. Nada é
+  // gravado — a pessoa continua na mesma questão e responde quando soltar.
+  // O relâmpago é isento: a tela de preparação já fez esse papel.
+  if (!contexto.e_relampago && contexto.entregue_em) {
+    const desdeQueApareceu = agora.getTime() - new Date(contexto.entregue_em).getTime()
+    if (desdeQueApareceu < contexto.segundos_trava * 1000) {
+      return { registrado: false, motivo: 'cedo_demais' }
+    }
+  }
 
   let escolhaGravada = escolha
   const sobPressao = contexto.e_relampago && contexto.grupo_relampago === 'cronometro'
@@ -1683,6 +1781,28 @@ test('A TRAVA pela API: a segunda resposta é recusada e o banco não muda', asy
   assert.equal(db.prepare('SELECT COUNT(*) c FROM resposta').get().c, 1)
 })
 
+test('A TRAVA DE ARMAÇÃO pela API: responder cedo devolve 425 e nada é gravado', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  const cabecalhos = { cookie: `pt=${cookie.value}` }
+  const questaoId = corpo.questoes[0].id
+
+  await a.inject({ method: 'POST', url: '/api/entregar', headers: cabecalhos, payload: { questaoId } })
+  const cedo = await a.inject({ method: 'POST', url: '/api/responder', headers: cabecalhos,
+    payload: { questaoId, escolha: 'busca' } })
+  assert.equal(cedo.statusCode, 425)
+  assert.equal(cedo.json().motivo, 'cedo_demais')
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM resposta').get().c, 0)
+})
+
+test('entrar informa a duração da trava para o cliente poder avisar', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo } = await entrar(a)
+  assert.equal(corpo.segundosTrava, 4)
+})
+
 test('meu-resultado responde 409 antes da revelação e 200 depois', async () => {
   const { db, rodada, app: a } = montarApp()
   definirFase(db, rodada.id, 'respondendo')
@@ -1862,6 +1982,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       rotulo: participante.rotulo,
       fase: rodada.fase,
       segundosRelampago: rodada.segundos_relampago,
+      segundosTrava: rodada.segundos_trava,
       questoes: questoesDoParticipante(db, participante.id),
       jaRespondidas
     }
@@ -1885,7 +2006,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       participanteId: participante.id, questaoId, escolha, msParaResponder
     })
     if (!r.registrado) {
-      return reply.code(r.motivo === 'ja_respondida' ? 409 : 400).send({ motivo: r.motivo })
+      const codigo = { ja_respondida: 409, cedo_demais: 425 }[r.motivo] ?? 400
+      return reply.code(codigo).send({ motivo: r.motivo })
     }
     emitirPainel()
     // Devolve só o suficiente para o cliente avançar de tela. Nunca `correta`.
@@ -2139,17 +2261,19 @@ rtk git commit -m "feat: rotas do painel de controle protegidas por chave"
 
 ---
 
-### Task 9: Tela do participante
+### Task 9: Tela do participante, com trava de armação e tela de preparação
 
 **Files:**
 - Create: `src/publico/comum.css`, `src/publico/quiz.html`, `src/publico/quiz.js`
 - Test: `testes/frontend.test.js`
 
 **Interfaces:**
-- Consumes: as rotas do participante da Task 7.
+- Consumes: as rotas do participante da Task 7. `POST /api/entrar` devolve também `segundosTrava`.
 - Produces: `GET /quiz.html` — a tela que vai no chat do Zoom. Nenhum outro módulo depende dela.
 
-- [ ] **Step 1: Escrever o teste de vazamento estático**
+Referência visual: `design/confere-ou-confia.html`, quadros "Participante — celular" e "Participante — desktop". São o mesmo componente em duas larguras.
+
+- [ ] **Step 1: Escrever os testes que falham**
 
 ```js
 // testes/frontend.test.js
@@ -2187,42 +2311,86 @@ test('nenhum módulo do servidor identifica ou bloqueia por IP', () => {
   }
 })
 
-test('as três telas existem e declaram a paleta compartilhada', () => {
+test('as três telas existem e declaram a folha compartilhada', () => {
   for (const arquivo of ['quiz.html', 'telao.html', 'painel.html']) {
     assert.match(ler(arquivo), /comum\.css/, `${arquivo} não carrega comum.css`)
   }
 })
 
-test('a paleta usa azul e laranja, nunca o par verde/vermelho reprovado', () => {
+test('a paleta é a da marca, e não o par verde/vermelho reprovado', () => {
   const css = ler('comum.css')
-  assert.match(css, /--acerto:\s*#3987e5/)
-  assert.match(css, /--erro:\s*#d95926/)
+  assert.match(css, /--navy:\s*#29235c/)
+  assert.match(css, /--laranja:\s*#ff8000/)
+  assert.match(css, /--teal:\s*#169194/)
   assert.ok(!/#0ca30c/i.test(css), 'o verde reprovado no gate de daltonismo voltou')
   assert.ok(!/#d03b3b/i.test(css), 'o vermelho reprovado no gate de daltonismo voltou')
+})
+
+test('nada de canto arredondado nem sombra difusa: a composição é chapada', () => {
+  const css = ler('comum.css')
+  assert.ok(!/border-radius/.test(css), 'canto arredondado não pertence a esta composição')
+  for (const sombra of css.match(/box-shadow:[^;]+/g) ?? []) {
+    assert.match(sombra, /\b0\s*(;|$|,)/,
+      `sombra com desfoque em "${sombra}" — o relevo é bloco de aresta dura`)
+  }
+})
+
+test('o botão travado perde o relevo', () => {
+  const css = ler('comum.css')
+  const travado = css.match(/\.opcao:disabled\s*\{[^}]*\}/)
+  assert.ok(travado, 'falta o estado :disabled do botão')
+  assert.match(travado[0], /box-shadow:\s*none/, 'travado não é apertável, então não pode parecer levantado')
+})
+
+test('o quiz carimba a entrega de toda questão, não só do relâmpago', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /\/api\/entregar/)
+  // A chamada não pode estar dentro de um if de relâmpago.
+  const trecho = fonte.slice(Math.max(0, fonte.indexOf('/api/entregar') - 400), fonte.indexOf('/api/entregar'))
+  assert.ok(!/eRelampago[^\n]*\)\s*\{[^}]*$/.test(trecho),
+    'entregar precisa valer para toda questão: é o que arma a trava')
+})
+
+test('o aviso da trava fala com o participante a cada questão', () => {
+  assert.match(ler('quiz.js'), /liberam em/, 'o participante precisa saber por que os botões estão mortos')
+})
+
+test('só o grupo do cronômetro lê o aviso dos 10 segundos', () => {
+  const fonte = ler('quiz.js')
+  const preparacao = fonte.slice(fonte.indexOf('function desenharPreparacao'))
+  assert.match(preparacao, /comCronometro/,
+    'a tela de preparação precisa ramificar por grupo — o aviso de tempo é o próprio tratamento do A/B')
 })
 ```
 
 - [ ] **Step 2: Rodar para confirmar que falham**
 
 Run: `npm test`
-Expected: FAIL — `ENOENT: src/publico/quiz.html`
+Expected: FAIL — `ENOENT: src/publico/comum.css`
 
 - [ ] **Step 3: Escrever `src/publico/comum.css`**
 
+Folha única das três telas: paleta, campos, tipografia, barra e botão.
+
 ```css
-/* src/publico/comum.css — paleta validada, tema escuro único */
+/* src/publico/comum.css — marca do LIB em composição de cartaz suíço.
+   Sem canto arredondado, sem sombra difusa, sem gradiente. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-  --plano:      #0d0d0d;
-  --superficie: #1a1a19;
-  --tinta:      #ffffff;
-  --tinta-2:    #c3c2b7;
-  --tinta-3:    #898781;
-  --grade:      #2c2c2a;
-  --acerto:     #3987e5;
-  --erro:       #d95926;
-  --expirou:    #898781;
-  --raio:       12px;
-  --fonte: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --navy:        #29235c;
+  --navy-escuro: #1d1846;
+  --laranja:     #ff8000;
+  --laranja-2:   #e67300;
+  --teal:        #169194;
+  --branco:      #ffffff;
+  --lilas:       #8b87ad;
+  --lilas-claro: #c9c6de;
+  --claro:       #e3e5ee;
+  --texto-claro: #5b5880;
+  --display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --texto:   'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --filete: 3px;
   color-scheme: dark;
 }
 
@@ -2230,46 +2398,95 @@ Expected: FAIL — `ENOENT: src/publico/quiz.html`
 
 body {
   margin: 0;
-  background: var(--plano);
-  color: var(--tinta);
-  font-family: var(--fonte);
+  background: var(--navy-escuro);
+  color: var(--branco);
+  font-family: var(--texto);
   -webkit-text-size-adjust: 100%;
 }
 
-.cartao {
-  background: var(--superficie);
-  border-radius: var(--raio);
-  padding: 24px;
-}
+a { color: var(--laranja); }
+a:hover { color: var(--laranja-2); }
 
-.discreto { color: var(--tinta-3); }
-.secundario { color: var(--tinta-2); }
+/* Campos de cor chapados, encostados, separados pelo filete. */
+.campo  { padding: 22px 20px; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.navy   { background: var(--navy);   color: var(--branco); }
+.branco { background: var(--branco); color: var(--navy); }
+.laranja{ background: var(--laranja);color: var(--navy-escuro); }
+.teal   { background: var(--teal);   color: var(--branco); }
 
-/* Barra empilhada. O vão de 2px é a superfície aparecendo entre segmentos. */
-.barra {
-  display: flex;
-  gap: 2px;
-  height: 28px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--grade);
+.disp {
+  font-family: var(--display);
+  font-variation-settings: 'wdth' 116, 'wght' 800;
+  line-height: .95; letter-spacing: -.02em; text-transform: uppercase; margin: 0;
 }
-.seg {
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 600; color: var(--plano);
-  min-width: 0; transition: flex-basis 400ms ease;
+.num {
+  font-family: var(--display);
+  font-variation-settings: 'wdth' 112, 'wght' 800;
+  line-height: .8; letter-spacing: -.045em; font-variant-numeric: tabular-nums;
 }
-.seg.acerto  { background: var(--acerto); }
-.seg.erro    { background: var(--erro); }
-.seg.expirou { background: var(--expirou); }
+.etiq { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
 
-/* Legenda: a identidade nunca depende só da cor. */
-.legenda { display: flex; gap: 20px; flex-wrap: wrap; color: var(--tinta-2); font-size: 14px; }
-.legenda span { display: flex; align-items: center; gap: 8px; }
-.amostra { width: 14px; height: 14px; border-radius: 3px; }
-.amostra.acerto { background: var(--acerto); }
-.amostra.erro { background: var(--erro); }
-.amostra.expirou { background: var(--expirou); }
+.cabeca {
+  background: var(--navy); color: var(--lilas);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 44px; flex: 0 0 44px;
+}
+.cabeca strong { color: var(--branco); font-weight: 600; }
+
+/* Barra empilhada: o filete entre segmentos é o mesmo do grid. */
+.trilho { display: flex; gap: var(--filete); background: var(--navy-escuro); width: 100%; }
+.parte  { display: flex; align-items: center; padding: 0 12px; font-size: 15px; font-weight: 600;
+          font-variant-numeric: tabular-nums; min-width: 0; }
+.p-acerto  { background: var(--branco); color: var(--navy); }
+.p-erro    { background: var(--laranja); color: var(--navy-escuro); }
+.p-expirou { background: var(--lilas);   color: var(--navy-escuro); }
+
+.chave { display: flex; gap: 26px; flex-wrap: wrap; font-size: 13px; font-weight: 500; color: var(--lilas-claro); }
+.chave span { display: flex; align-items: center; gap: 9px; }
+.quadrado { width: 13px; height: 13px; display: block; }
+
+/* Banda de ação: aviso da trava em cima, botões embaixo. */
+.acoes { background: var(--navy); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.aviso { display: flex; flex-direction: column; gap: 9px; }
+.aviso .etiq { color: #ffb673; }
+.trilha { height: 4px; background: var(--navy-escuro); }
+.trilha i { display: block; height: 100%; background: var(--laranja); }
+
+/* Lado a lado por padrão. O flex-basis decide: só empilha quando não cabem
+   duas colunas de 150px, abaixo de ~305px de largura. */
+.opcoes { display: flex; flex-wrap: wrap; gap: 14px; }
+.opcao {
+  font-family: inherit; border: none; cursor: pointer; text-align: left;
+  flex: 1 1 150px; min-width: 0;
+  background: var(--branco); color: var(--navy); padding: 18px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 18px;
+  box-shadow: 6px 6px 0 var(--navy-escuro);
+  transition: transform .09s ease-out, box-shadow .09s ease-out, background .12s, opacity .2s;
+}
+.opcao:hover:not(:disabled)  { background: #f4f5f9; box-shadow: 3px 3px 0 var(--laranja); transform: translate(3px, 3px); }
+.opcao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(6px, 6px); }
+/* Travado não é apertável, então não fica levantado. */
+.opcao:disabled { background: var(--claro); box-shadow: none; transform: none; cursor: default; opacity: .5; }
+.opcao .topo   { display: flex; align-items: center; justify-content: space-between; }
+.opcao .marca  { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: 0 0 auto; }
+.opcao .texto  { display: flex; flex-direction: column; gap: 4px; }
+.opcao .rotulo { font-family: var(--display); font-variation-settings: 'wdth' 116, 'wght' 800;
+                 text-transform: uppercase; font-size: 21px; line-height: 1; }
+.opcao .nota   { font-size: 13px; font-weight: 500; color: var(--texto-claro); }
+
+/* Acima de 700px o botão vira fileira e a tipografia cresce. Mesma estrutura. */
+@media (min-width: 700px) {
+  .campo { padding: 30px 34px; }
+  .etiq  { font-size: 12px; }
+  .acoes { padding: 24px; gap: 20px; }
+  .opcoes { gap: 22px; }
+  .opcao { padding: 28px; gap: 30px; box-shadow: 9px 9px 0 var(--navy-escuro); }
+  .opcao:hover:not(:disabled)  { box-shadow: 5px 5px 0 var(--laranja); transform: translate(4px, 4px); }
+  .opcao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(9px, 9px); }
+  .opcao .marca  { width: 44px; height: 44px; }
+  .opcao .rotulo { font-size: 46px; }
+  .opcao .nota   { font-size: 19px; }
+}
 ```
 
 - [ ] **Step 4: Escrever `src/publico/quiz.html`**
@@ -2283,31 +2500,13 @@ body {
   <title>Confere ou Confia?</title>
   <link rel="stylesheet" href="/comum.css">
   <style>
-    body { display: flex; justify-content: center; padding: 20px; }
-    main { width: 100%; max-width: 560px; }
-    .rotulo { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); }
-    .progresso { font-size: 13px; color: var(--tinta-3); margin-top: 4px; }
-    .enunciado { font-size: 21px; line-height: 1.45; margin: 24px 0 32px; }
-    .opcoes { display: grid; gap: 12px; }
-    button.opcao {
-      font-family: var(--fonte); font-size: 18px; font-weight: 600;
-      padding: 22px 20px; border-radius: var(--raio); border: 2px solid var(--grade);
-      background: var(--superficie); color: var(--tinta); cursor: pointer; text-align: left;
-    }
-    button.opcao:hover:not(:disabled) { border-color: var(--tinta-3); }
-    button.opcao:disabled { opacity: .45; cursor: default; }
-    .cronometro { font-size: 44px; font-weight: 700; text-align: center; margin: 12px 0; }
-    .cronometro.apertado { color: var(--erro); }
-    .centrado { text-align: center; padding: 48px 0; }
-    .grande { font-size: 56px; font-weight: 700; margin: 8px 0; }
-    .item { border-top: 1px solid var(--grade); padding: 16px 0; }
-    .veredito { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-    .veredito.certo { color: var(--acerto); }
-    .veredito.torto { color: var(--erro); }
+    body { display: flex; flex-direction: column; gap: var(--filete); min-height: 100vh; }
+    main { display: flex; flex-direction: column; gap: var(--filete); flex: 1; }
   </style>
 </head>
 <body>
-  <main id="tela" aria-live="polite"><p class="centrado discreto">Carregando…</p></main>
+  <div class="cabeca etiq"><strong>Confere ou Confia?</strong><span id="marcador"></span></div>
+  <main id="tela" aria-live="polite"></main>
   <script type="module" src="/quiz.js"></script>
 </body>
 </html>
@@ -2318,135 +2517,210 @@ body {
 ```js
 // src/publico/quiz.js
 const tela = document.getElementById('tela')
+const marcador = document.getElementById('marcador')
 
 const estado = {
-  rotulo: '', fase: 'espera', segundosRelampago: 10,
-  questoes: [], respondidas: new Set(), enviando: false,
-  mostradaEm: 0, cronometro: null, resultado: null
+  rotulo: '', fase: 'espera', segundosTrava: 4, segundosRelampago: 10,
+  questoes: [], respondidas: new Set(), enviando: false, preparado: false,
+  mostradaEm: 0, cronometro: null, trava: null, resultado: null
 }
 
-const escapar = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const escapar = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+
+const LUPA = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8000" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.6-4.6"></path></svg>'
+const CANETA = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#169194" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3z"></path><path d="M13.5 6.5l4 4"></path></svg>'
+const CHECK = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#29235c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>'
+const ELO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#29235c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>'
+const RAIO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z"></path></svg>'
+const seta = cor => `<span class="marca" style="background: ${cor}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${cor === '#ff8000' ? '#1d1846' : '#ffffff'}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></span>`
+
+const botao = (valor, icone, cor, rotulo, nota, travado) => `
+  <button class="opcao" data-escolha="${valor}"${travado ? ' disabled' : ''}>
+    <span class="topo">${icone}${seta(cor)}</span>
+    <span class="texto"><span class="rotulo">${rotulo}</span><span class="nota">${nota}</span></span>
+  </button>`
 
 async function entrar () {
   const r = await fetch('/api/entrar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
   if (!r.ok) {
-    tela.innerHTML = '<p class="centrado discreto">A dinâmica ainda não abriu, ou as entradas foram encerradas.</p>'
+    tela.innerHTML = '<div class="campo navy" style="flex:1; justify-content:center"><p class="secundario">A dinâmica ainda não abriu, ou as entradas foram encerradas.</p></div>'
     return false
   }
-  const dados = await r.json()
-  estado.rotulo = dados.rotulo
-  estado.fase = dados.fase
-  estado.segundosRelampago = dados.segundosRelampago
-  estado.questoes = dados.questoes
-  estado.respondidas = new Set(dados.jaRespondidas)
+  const d = await r.json()
+  Object.assign(estado, {
+    rotulo: d.rotulo, fase: d.fase,
+    segundosTrava: d.segundosTrava, segundosRelampago: d.segundosRelampago,
+    questoes: d.questoes, respondidas: new Set(d.jaRespondidas)
+  })
   return true
 }
 
 const pendente = () => estado.questoes.find(q => !estado.respondidas.has(q.id))
 
-function pararCronometro () {
+function pararTemporizadores () {
   if (estado.cronometro) { clearInterval(estado.cronometro); estado.cronometro = null }
+  if (estado.trava) { clearInterval(estado.trava); estado.trava = null }
 }
 
 async function responder (questao, escolha) {
   if (estado.enviando || estado.respondidas.has(questao.id)) return
   estado.enviando = true
-  pararCronometro()
-  document.querySelectorAll('button.opcao').forEach(b => { b.disabled = true })
+  pararTemporizadores()
+  for (const b of tela.querySelectorAll('button.opcao')) b.disabled = true
   try {
     const r = await fetch('/api/responder', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ questaoId: questao.id, escolha, msParaResponder: Date.now() - estado.mostradaEm })
     })
-    // 409 = já respondida. A trava é do servidor; aqui é só seguir em frente.
-    if (r.ok || r.status === 409) estado.respondidas.add(questao.id)
-    else if (r.status === 400) estado.respondidas.add(questao.id)
+    if (r.status === 425) { estado.enviando = false; desenhar(); return }  // chegou antes da trava
+    if (r.ok || r.status === 409 || r.status === 400) estado.respondidas.add(questao.id)
   } catch {
     estado.enviando = false
-    document.querySelectorAll('button.opcao').forEach(b => { b.disabled = false })
+    for (const b of tela.querySelectorAll('button.opcao')) b.disabled = false
     return
   }
   estado.enviando = false
   desenhar()
 }
 
-function desenharQuestao (questao) {
-  const numero = estado.respondidas.size + 1
-  const eixo = questao.eRelampago
-    ? [['confio', 'Confio — uso do jeito que veio'], ['confiro', 'Confiro — abro o link antes']]
-    : [['busca', '🔎 Isso é BUSCA — vá à fonte'], ['redacao', '✍️ Isso é REDAÇÃO — a IA resolve']]
-
-  tela.innerHTML = `
-    <div class="rotulo">${escapar(estado.rotulo)}</div>
-    <div class="progresso">${questao.eRelampago ? 'Pergunta relâmpago' : `Situação ${numero} de 4`}</div>
-    ${questao.eRelampago && questao.comCronometro ? '<div class="cronometro" id="conta"></div>' : ''}
-    <p class="enunciado">${escapar(questao.texto)}</p>
-    <div class="opcoes">
-      ${eixo.map(([valor, texto]) => `<button class="opcao" data-escolha="${valor}">${texto}</button>`).join('')}
-    </div>`
-
-  for (const botao of tela.querySelectorAll('button.opcao')) {
-    botao.addEventListener('click', () => responder(questao, botao.dataset.escolha))
+// A trava é do servidor; aqui ela só é visível. Sem o aviso, os botões mortos
+// pareceriam travamento do sistema em vez de regra da dinâmica.
+function armarTrava (questao) {
+  const total = estado.segundosTrava * 1000
+  const inicio = Date.now()
+  const faixa = document.getElementById('aviso')
+  const linha = document.getElementById('linha')
+  const passo = () => {
+    const falta = Math.max(0, total - (Date.now() - inicio))
+    linha.style.width = `${((total - falta) / total) * 100}%`
+    faixa.textContent = `Leia a situação · os botões liberam em ${Math.ceil(falta / 1000)}s`
+    if (falta === 0) {
+      pararTemporizadores()
+      faixa.parentElement.remove()
+      for (const b of tela.querySelectorAll('button.opcao')) b.disabled = false
+      estado.mostradaEm = Date.now()
+    }
   }
-
-  estado.mostradaEm = Date.now()
-
-  if (questao.eRelampago) {
-    fetch('/api/entregar', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ questaoId: questao.id })
-    })
-    if (questao.comCronometro) iniciarCronometro(questao)
-  }
+  passo()
+  estado.trava = setInterval(passo, 80)
 }
 
 function iniciarCronometro (questao) {
   const conta = document.getElementById('conta')
+  const faixa = document.getElementById('faixaTempo')
   const fim = Date.now() + estado.segundosRelampago * 1000
   const passo = () => {
-    const restante = Math.max(0, Math.ceil((fim - Date.now()) / 1000))
-    conta.textContent = `${restante}s`
-    conta.classList.toggle('apertado', restante <= 3)
-    if (restante === 0) {
-      pararCronometro()
-      // Manda a escolha do eixo; o servidor decide se estourou. Ele é a autoridade.
-      responder(questao, 'confio')
-    }
+    const falta = Math.max(0, Math.ceil((fim - Date.now()) / 1000))
+    conta.textContent = `${falta}s`
+    faixa.className = falta <= 3 ? 'campo laranja' : 'campo branco'
+    if (falta === 0) { pararTemporizadores(); responder(questao, 'confio') }
   }
   passo()
   estado.cronometro = setInterval(passo, 200)
 }
 
+function desenharQuestao (questao) {
+  const numero = [...estado.questoes].filter(q => !q.eRelampago).findIndex(q => q.id === questao.id) + 1
+  marcador.textContent = questao.eRelampago ? 'Relâmpago' : `Situação ${numero} de 4`
+  const travado = !questao.eRelampago
+  const comTempo = questao.eRelampago && questao.comCronometro
+
+  const opcoes = questao.eRelampago
+    ? botao('confio', CHECK, '#29235c', 'Confio', 'uso do jeito que veio', false) +
+      botao('confiro', ELO, '#29235c', 'Confiro', 'abro o link antes', false)
+    : botao('busca', LUPA, '#ff8000', 'Busca', 'vá à fonte', travado) +
+      botao('redacao', CANETA, '#169194', 'Redação', 'a IA resolve', travado)
+
+  tela.innerHTML = `
+    ${comTempo ? '<div class="campo branco" id="faixaTempo" style="flex-direction:row; align-items:baseline; justify-content:space-between; padding:14px 20px"><span class="etiq">tempo</span><span class="num" id="conta" style="font-size:46px"></span></div>' : ''}
+    <div class="campo navy" style="flex:1; justify-content:center">
+      <p style="font-size:22px; line-height:1.36; font-weight:500; margin:0">${escapar(questao.texto)}</p>
+    </div>
+    <div class="acoes">
+      ${travado ? '<div class="aviso"><span class="etiq" id="aviso"></span><div class="trilha"><i id="linha" style="width:0"></i></div></div>' : ''}
+      <div class="opcoes">${opcoes}</div>
+    </div>`
+
+  for (const b of tela.querySelectorAll('button.opcao')) {
+    b.addEventListener('click', () => responder(questao, b.dataset.escolha))
+  }
+
+  // Carimba a entrega de TODA questão: é o que arma a trava no servidor,
+  // e no relâmpago é o que inicia o cronômetro.
+  fetch('/api/entregar', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ questaoId: questao.id })
+  })
+
+  estado.mostradaEm = Date.now()
+  if (travado) armarTrava(questao)
+  if (comTempo) iniciarCronometro(questao)
+}
+
+function desenharPreparacao (relampago) {
+  marcador.textContent = 'Prepare-se'
+  const comCronometro = relampago.comCronometro
+  tela.innerHTML = `
+    <div class="campo navy" style="flex:1; justify-content:flex-end">
+      <div class="etiq" style="color:var(--lilas)">Última</div>
+      <div class="disp" style="font-size:52px; margin-top:14px">Mais<br>uma,<br><span style="color:var(--laranja)">e acabou.</span></div>
+    </div>
+    ${comCronometro ? `
+    <div class="campo laranja" style="flex-direction:row; align-items:center; gap:14px">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
+      <span class="disp" style="font-size:21px">Esta tem ${estado.segundosRelampago} segundos.<br>Comece quando estiver pronto.</span>
+    </div>` : ''}
+    <div class="acoes"><div class="opcoes">
+      <button class="opcao" id="pronto">
+        <span class="topo">${RAIO}${seta('#ff8000')}</span>
+        <span class="texto"><span class="rotulo">Estou pronto</span><span class="nota">${comCronometro ? 'o cronômetro começa agora' : 'sem pressa'}</span></span>
+      </button>
+    </div></div>`
+  document.getElementById('pronto').addEventListener('click', () => {
+    estado.preparado = true
+    desenhar()
+  })
+}
+
 function desenharResultado () {
+  marcador.textContent = 'Resultado'
   const r = estado.resultado
   tela.innerHTML = `
-    <div class="centrado">
-      <div class="rotulo">${escapar(estado.rotulo)}</div>
-      <div class="grande">${r.acertos} de ${r.total}</div>
-      <p class="secundario">Confiar é ótimo. Conferir é obrigatório.</p>
+    <div class="campo laranja" style="flex-direction:row; align-items:flex-end; justify-content:space-between; padding:30px 20px 26px">
+      <div class="disp" style="font-size:26px">Você<br>acertou</div>
+      <div class="num" style="font-size:108px">${r.acertos}<span style="font-size:46px">/${r.total}</span></div>
     </div>
     ${r.itens.map(i => `
-      <div class="item">
-        <div class="veredito ${i.correta ? 'certo' : 'torto'}">${i.correta ? 'Acertou' : 'Escorregou'}</div>
-        <p>${escapar(i.texto)}</p>
-        <p class="secundario">${escapar(i.explicacao)}</p>
-      </div>`).join('')}`
+      <div class="campo navy">
+        <div style="display:flex; align-items:center; gap:10px">
+          <i class="quadrado" style="background:${i.correta ? '#ffffff' : '#ff8000'}"></i>
+          <span class="etiq" style="color:${i.correta ? '#ffffff' : '#ff8000'}">${i.correta ? 'Acertou' : 'Escorregou'}</span>
+        </div>
+        <p style="font-size:15px; line-height:1.42; margin:12px 0 8px; font-weight:500">${escapar(i.texto)}</p>
+        <p style="font-size:14px; line-height:1.42; margin:0; color:var(--lilas)">${escapar(i.explicacao)}</p>
+      </div>`).join('')}
+    <div class="campo branco">
+      <div class="disp" style="font-size:24px">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
+    </div>`
 }
 
 async function desenhar () {
-  pararCronometro()
+  pararTemporizadores()
+  marcador.textContent = estado.rotulo
 
   if (estado.fase === 'espera') {
-    tela.innerHTML = `<div class="centrado">
-      <div class="rotulo">${escapar(estado.rotulo)}</div>
-      <p class="secundario">Você está dentro. Aguarde o início.</p></div>`
+    tela.innerHTML = `
+      <div class="campo navy" style="flex:1; justify-content:flex-end">
+        <div class="disp" style="font-size:52px">Você<br>está<br><span style="color:var(--laranja)">dentro.</span></div>
+        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">${escapar(estado.rotulo)} · aguarde o início</p>
+      </div>`
     return
   }
 
   if (estado.fase === 'revelado') {
     if (!estado.resultado) {
       const r = await fetch('/api/meu-resultado')
-      if (!r.ok) { tela.innerHTML = '<p class="centrado discreto">Aguarde…</p>'; return }
+      if (!r.ok) { tela.innerHTML = '<div class="campo navy" style="flex:1"></div>'; return }
       estado.resultado = await r.json()
     }
     desenharResultado()
@@ -2454,23 +2728,30 @@ async function desenhar () {
   }
 
   const questao = pendente()
-  if (questao) desenharQuestao(questao)
-  else {
-    tela.innerHTML = `<div class="centrado">
-      <div class="rotulo">${escapar(estado.rotulo)}</div>
-      <p class="secundario">Suas respostas foram registradas.<br>Aguarde a revelação.</p></div>`
+  if (!questao) {
+    tela.innerHTML = `
+      <div class="campo navy" style="flex:1; justify-content:flex-end">
+        <div class="disp" style="font-size:46px">Respostas<br>registradas.</div>
+        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">Ninguém sabe o resultado ainda. Nem você.</p>
+      </div>
+      <div class="campo teal etiq">aguarde a revelação</div>`
+    return
   }
+
+  // A tela de preparação entra entre a quarta situação e o relâmpago.
+  if (questao.eRelampago && !estado.preparado) { desenharPreparacao(questao); return }
+  desenharQuestao(questao)
 }
 
 function ouvirEstado () {
   const fonte = new EventSource('/stream')
   fonte.addEventListener('estado', evento => {
-    const dados = JSON.parse(evento.data)
-    const mudou = dados.fase !== estado.fase
-    estado.fase = dados.fase
-    estado.segundosRelampago = dados.segundosRelampago
+    const d = JSON.parse(evento.data)
+    const mudou = d.fase !== estado.fase
+    estado.fase = d.fase
+    estado.segundosRelampago = d.segundosRelampago
     // Só redesenha na virada de fase: no meio de uma questão, redesenhar
-    // reiniciaria o cronômetro e apagaria o clique do participante.
+    // reiniciaria a trava e o cronômetro.
     if (mudou) desenhar()
   })
 }
@@ -2483,13 +2764,13 @@ if (await entrar()) { await desenhar(); ouvirEstado() }
 Run: `npm test`
 Expected: PASS
 
-- [ ] **Step 7: Conferir na tela**
+- [ ] **Step 7: Conferir na tela, nas duas larguras**
 
 ```bash
 ADMIN_KEY=teste npm start
 ```
 
-Em outro terminal, criar a rodada e liberar:
+Em outro terminal:
 
 ```bash
 curl -s -X POST 'localhost:3000/api/painel/rodada?k=teste' \
@@ -2498,13 +2779,28 @@ curl -s -X POST 'localhost:3000/api/painel/fase?k=teste' \
   -H 'content-type: application/json' -d '{"fase":"respondendo"}'
 ```
 
-Abrir `http://localhost:3000/quiz.html` e responder as 5. Confirmar: tela de espera antes de liberar, nenhum feedback de acerto durante, e a tela de "aguarde" ao terminar. Abrir uma segunda aba anônima para virar o Participante #2 e ver o cronômetro de 10s no relâmpago.
+Abrir `http://localhost:3000/quiz.html` e conferir, nesta ordem:
+
+1. Em 390px de largura: os dois botões ficam **lado a lado**. Estreitando abaixo de ~305px, empilham.
+2. A cada situação nova os botões nascem apagados e sem relevo, com a faixa contando e a linha laranja preenchendo. Clicar durante a trava não faz nada.
+3. Liberados, o botão levanta; apertando e segurando, ele afunda os 6px.
+4. Depois da quarta situação vem a tela de preparação. Numa aba anônima (Participante #2, grupo do cronômetro) ela avisa dos 10 segundos; em outra (#1, controle) a mesma tela **não menciona tempo**.
+5. Em 1440px de largura o botão vira fileira e a tipografia cresce — mesmo componente.
+
+Tentar burlar a trava pelo servidor, que é quem decide:
+
+```bash
+# deve responder 425
+curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:3000/api/responder \
+  -b "pt=$TOKEN" -H 'content-type: application/json' \
+  -d '{"questaoId":"B1","escolha":"busca"}'
+```
 
 - [ ] **Step 8: Commit**
 
 ```bash
 rtk git add src/publico/comum.css src/publico/quiz.html src/publico/quiz.js testes/frontend.test.js
-rtk git commit -m "feat: tela do participante, sem feedback antes da revelação"
+rtk git commit -m "feat: tela do participante com trava de armação e tela de preparação"
 ```
 
 ---
@@ -2578,41 +2874,41 @@ Expected: FAIL — `ENOENT: src/publico/telao.js`
 
 - [ ] **Step 3: Escrever `src/publico/telao.css`**
 
+Referência visual: quadro "Telão — projetado no Zoom" em `design/confere-ou-confia.html`.
+
 ```css
-/* src/publico/telao.css — desenhado para projeção via Zoom:
-   tipografia grande, poucos elementos, alto contraste. */
-body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 4vh 5vw; }
-main { width: 100%; max-width: 1400px; }
+/* src/publico/telao.css — cartaz de 12 colunas, campos chapados separados
+   pelo filete de 3px. Desenhado para projeção via Zoom: tipografia grande,
+   poucos elementos, alto contraste. */
+body { overflow: hidden; }
 
-h1 { font-size: clamp(28px, 3.4vw, 52px); margin: 0 0 8px; font-weight: 700; }
-.legenda-tela { font-size: clamp(16px, 1.5vw, 24px); color: var(--tinta-2); margin: 0 0 40px; }
+.cartaz {
+  display: grid; gap: var(--filete); background: var(--navy-escuro);
+  width: 100vw; height: 100vh;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: clamp(38px, 3.4vw, 44px) repeat(6, 1fr);
+}
+.cartaz > .campo { padding: clamp(18px, 2vw, 30px) clamp(20px, 2.4vw, 34px); overflow: hidden; }
 
-.contadores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.contador { background: var(--superficie); border-radius: var(--raio); padding: 32px; text-align: center; }
-.contador .valor { font-size: clamp(48px, 7vw, 104px); font-weight: 700; line-height: 1; }
-.contador .nome { font-size: clamp(14px, 1.2vw, 20px); color: var(--tinta-3);
-                  text-transform: uppercase; letter-spacing: .08em; margin-top: 12px; }
+.cabeca { grid-column: 1 / 13; height: auto; padding: 0 clamp(20px, 2.4vw, 34px); }
 
-.heroi { font-size: clamp(96px, 18vw, 260px); font-weight: 700; line-height: 1; text-align: center; }
-.heroi-nota { text-align: center; font-size: clamp(18px, 2vw, 32px); color: var(--tinta-2); }
+/* Escala tipográfica do telão, em vw para acompanhar a janela projetada. */
+.t-titulo   { font-size: clamp(28px, 5vw, 66px); }
+.t-subtitulo{ font-size: clamp(20px, 3vw, 40px); }
+.t-corpo    { font-size: clamp(16px, 2.1vw, 27px); line-height: 1.32; font-weight: 500; margin: 0; }
+.t-heroi    { font-size: clamp(90px, 17.5vw, 224px); }
+.t-numero   { font-size: clamp(48px, 10.3vw, 132px); }
+.t-marca    { font-size: clamp(96px, 13.4vw, 172px); }
 
-.linhas { display: grid; gap: 18px; margin: 32px 0; }
-.linha { display: grid; grid-template-columns: minmax(200px, 26%) 1fr 90px; gap: 20px; align-items: center; }
-.linha .nome { font-size: clamp(15px, 1.4vw, 22px); color: var(--tinta-2); }
-.linha .n { font-size: clamp(13px, 1.1vw, 18px); color: var(--tinta-3);
-            text-align: right; font-variant-numeric: tabular-nums; }
-.linha .barra { height: clamp(32px, 4vw, 52px); }
-.linha .seg { font-size: clamp(13px, 1.2vw, 19px); }
+.linhas { display: grid; gap: clamp(10px, 1.2vw, 15px); }
+.linha  { display: grid; grid-template-columns: clamp(160px, 22vw, 290px) 1fr clamp(64px, 7vw, 92px);
+          gap: clamp(12px, 1.6vw, 20px); align-items: center; }
+.linha .nome { font-size: clamp(13px, 1.35vw, 17px); font-weight: 500; }
+.linha .n    { text-align: right; color: var(--lilas); font-variant-numeric: tabular-nums; }
+.linha .trilho { height: clamp(28px, 3.4vw, 44px); }
+.linha .parte  { font-size: clamp(12px, 1.2vw, 15px); }
 
-.enunciado-grande { font-size: clamp(22px, 2.6vw, 40px); line-height: 1.35; margin: 0 0 28px; }
-.regra { font-size: clamp(16px, 1.7vw, 26px); color: var(--tinta-2); border-left: 3px solid var(--acerto);
-         padding-left: 20px; margin-top: 28px; }
-
-.entrada { text-align: center; }
-.entrada .url { font-size: clamp(30px, 4.5vw, 68px); font-weight: 700; word-break: break-all; }
-
-.fechamento { text-align: center; font-size: clamp(32px, 5vw, 78px); font-weight: 700; line-height: 1.25; }
-.fechamento em { font-style: normal; color: var(--acerto); }
+.regra { border-left: 3px solid var(--laranja); padding-left: clamp(14px, 1.6vw, 20px); }
 ```
 
 - [ ] **Step 4: Escrever `src/publico/telao.html`**
@@ -2628,7 +2924,7 @@ h1 { font-size: clamp(28px, 3.4vw, 52px); margin: 0 0 8px; font-weight: 700; }
   <link rel="stylesheet" href="/telao.css">
 </head>
 <body>
-  <main id="tela"><p class="legenda-tela">Conectando…</p></main>
+  <div class="cartaz" id="tela"></div>
   <script type="module" src="/telao.js"></script>
 </body>
 </html>
@@ -2657,10 +2953,10 @@ export function montarPassos (ag) {
   ]
 }
 
-const LEGENDA = `<div class="legenda">
-  <span><i class="amostra acerto"></i>Acertou</span>
-  <span><i class="amostra erro"></i>Escorregou</span>
-  <span><i class="amostra expirou"></i>Não respondeu a tempo</span>
+const CHAVE = (comExpirou = false) => `<div class="chave">
+  <span><i class="quadrado" style="background: var(--branco)"></i>Acertou</span>
+  <span><i class="quadrado" style="background: var(--laranja)"></i>Escorregou</span>
+  ${comExpirou ? '<span><i class="quadrado" style="background: var(--lilas)"></i>Não respondeu a tempo</span>' : ''}
 </div>`
 
 // Rótulo direto só onde cabe: abaixo de 12% o texto encavalaria.
@@ -2668,104 +2964,149 @@ const LIMIAR_ROTULO = 12
 
 function barra (segmentos) {
   const larguras = larguraSegmentos(segmentos)
-  const pedacos = segmentos.map((s, i) => {
-    if (segmentos[i].valor === 0) return ''
-    const rotulo = larguras[i] >= LIMIAR_ROTULO ? `<span>${escapar(s.rotulo)}</span>` : ''
-    return `<div class="seg ${s.classe}" style="flex: 0 0 ${larguras[i]}%">${rotulo}</div>`
-  })
-  return `<div class="barra">${pedacos.join('')}</div>`
+  return `<div class="trilho">${segmentos.map((s, i) => s.valor === 0 ? '' :
+    `<div class="parte ${s.classe}" style="flex: 0 0 ${larguras[i]}%">${larguras[i] >= LIMIAR_ROTULO ? escapar(s.rotulo) : ''}</div>`
+  ).join('')}</div>`
 }
 
 function linha (nome, segmentos, n) {
   return `<div class="linha">
     <div class="nome">${escapar(nome)}</div>
     ${barra(segmentos)}
-    <div class="n">n=${n}</div>
+    <div class="n etiq">n ${n}</div>
   </div>`
 }
 
 const fatias = (acertos, erros, expirados = 0) => ([
-  { classe: 'acerto', valor: acertos, rotulo: `${acertos}` },
-  { classe: 'erro', valor: erros, rotulo: `${erros}` },
-  { classe: 'expirou', valor: expirados, rotulo: `${expirados}` }
+  { classe: 'p-acerto', valor: acertos, rotulo: String(acertos) },
+  { classe: 'p-erro', valor: erros, rotulo: String(erros) },
+  { classe: 'p-expirou', valor: expirados, rotulo: expirados > 0 ? String(expirados) : '' }
 ])
+
+const cabeca = ag => `<div class="cabeca etiq">
+  <span><strong>Confere ou Confia?</strong>&nbsp;&nbsp;Lean Institute Brasil</span>
+  <span>${ag.passoDebrief + 1} / ${montarPassos(ag).length}</span>
+</div>`
 
 // ---------- as telas ----------
 
 const telaEspera = ag => `
-  <div class="entrada">
-    <h1>Confere ou Confia?</h1>
-    <p class="legenda-tela">Abra o link que está no chat do Zoom</p>
-    <div class="url">${escapar(location.host)}/quiz.html</div>
-    <div class="contadores" style="margin-top:56px">
-      <div class="contador"><div class="valor">${ag.conectados}</div><div class="nome">conectados</div></div>
-    </div>
+  <div class="campo navy" style="grid-column:1/8; grid-row:2/5; justify-content:flex-end">
+    <h1 class="disp t-titulo">Confere<br><span style="color:var(--laranja)">ou</span> confia?</h1>
+  </div>
+  <div class="campo laranja" style="grid-column:8/13; grid-row:2/5; justify-content:space-between">
+    <div class="etiq">O link está no chat</div>
+    <div class="disp t-subtitulo" style="text-transform:none">${escapar(location.host)}</div>
+  </div>
+  <div class="campo branco" style="grid-column:1/8; grid-row:5/8; justify-content:flex-end">
+    <div class="num t-numero">${ag.conectados}</div>
+    <div class="etiq" style="margin-top:14px; color:var(--texto-claro)">conectados</div>
+  </div>
+  <div class="campo teal" style="grid-column:8/13; grid-row:5/8; justify-content:flex-end">
+    <div class="disp t-subtitulo">Quatro<br>situações.<br>Duas saídas.</div>
   </div>`
 
 const telaRespondendo = ag => `
-  <h1>Respondendo</h1>
-  <p class="legenda-tela">Ninguém vê resultado ainda — nem eu.</p>
-  <div class="contadores">
-    <div class="contador"><div class="valor">${ag.conectados}</div><div class="nome">conectados</div></div>
-    <div class="contador"><div class="valor">${ag.respondendo}</div><div class="nome">respondendo</div></div>
-    <div class="contador"><div class="valor">${ag.finalizados}</div><div class="nome">finalizados</div></div>
+  <div class="campo navy" style="grid-column:1/13; grid-row:2/4; justify-content:center">
+    <h1 class="disp t-titulo">Ninguém vê resultado<br>ainda. <span style="color:var(--laranja)">Nem eu.</span></h1>
+  </div>
+  <div class="campo branco" style="grid-column:1/5; grid-row:4/8; justify-content:flex-end">
+    <div class="num t-numero">${ag.conectados}</div><div class="etiq" style="margin-top:14px">conectados</div>
+  </div>
+  <div class="campo laranja" style="grid-column:5/9; grid-row:4/8; justify-content:flex-end">
+    <div class="num t-numero">${ag.respondendo}</div><div class="etiq" style="margin-top:14px">respondendo</div>
+  </div>
+  <div class="campo teal" style="grid-column:9/13; grid-row:4/8; justify-content:flex-end">
+    <div class="num t-numero">${ag.finalizados}</div><div class="etiq" style="margin-top:14px">finalizados</div>
   </div>`
 
 const telaPlacar = ag => `
-  <h1>O resultado da sala</h1>
-  <p class="legenda-tela">${ag.placar.decisoes} decisões, ${ag.finalizados} pessoas</p>
-  <div class="heroi" id="heroi">0%</div>
-  <p class="heroi-nota">de acerto na escolha entre buscar e redigir</p>`
+  <div class="campo laranja" style="grid-column:1/7; grid-row:2/8; justify-content:center">
+    <div class="num t-heroi" id="heroi">0%</div>
+  </div>
+  <div class="campo navy" style="grid-column:7/13; grid-row:2/5; justify-content:flex-end">
+    <h1 class="disp t-titulo">O resultado<br>da sala</h1>
+  </div>
+  <div class="campo branco" style="grid-column:7/13; grid-row:5/8; justify-content:space-between">
+    <div class="t-corpo">de acerto na escolha entre buscar e redigir</div>
+    <div class="etiq" style="color:var(--texto-claro)">${ag.placar.decisoes} decisões · ${ag.finalizados} pessoas</div>
+  </div>`
 
 const telaCategorias = ag => `
-  <h1>Onde vocês foram bem, e onde escorregaram</h1>
-  <div class="linhas">
-    ${ag.porCategoria.map(c =>
-      linha(c.categoria, fatias(c.acertos, c.total - c.acertos), c.total)).join('')}
+  <div class="campo branco" style="grid-column:1/13; grid-row:2/3; justify-content:center">
+    <h1 class="disp t-subtitulo">Onde vocês foram bem, e onde escorregaram</h1>
   </div>
-  ${LEGENDA}`
+  <div class="campo navy" style="grid-column:1/13; grid-row:3/8; justify-content:space-between">
+    <div class="linhas">
+      ${ag.porCategoria.map(c => linha(c.categoria, fatias(c.acertos, c.total - c.acertos), c.total)).join('')}
+    </div>
+    ${CHAVE()}
+  </div>`
 
 function telaArmadilha (ag, indice) {
   const a = ag.armadilhas[indice]
-  const certo = a.gabarito === 'busca' ? '🔎 Isso era BUSCA' : '✍️ Isso era REDAÇÃO'
+  const veredito = a.gabarito === 'busca' ? 'Isso era busca' : 'Isso era redação'
   return `
-    <h1>${a.percentualErro}% escorregou aqui</h1>
-    <p class="enunciado-grande">${escapar(a.texto)}</p>
-    <div class="linhas">${linha(certo, fatias(a.acertos, a.total - a.acertos), a.total)}</div>
-    ${LEGENDA}
-    <p class="regra">${escapar(a.explicacao)}</p>`
+    <div class="campo laranja" style="grid-column:1/6; grid-row:2/8; justify-content:space-between">
+      <div class="etiq">Armadilha</div>
+      <div>
+        <div class="num t-marca">${a.percentualErro}%</div>
+        <div class="disp t-subtitulo" style="margin-top:18px">escorregou<br>aqui</div>
+      </div>
+      <div class="etiq">n ${a.total} respostas</div>
+    </div>
+    <div class="campo navy" style="grid-column:6/13; grid-row:2/6; justify-content:space-between">
+      <p class="t-corpo">${escapar(a.texto)}</p>
+      <div>${barra(fatias(a.acertos, a.total - a.acertos))}<div style="height:14px"></div>${CHAVE()}</div>
+    </div>
+    <div class="campo branco" style="grid-column:6/13; grid-row:6/8; justify-content:space-between">
+      <div class="disp t-subtitulo">${veredito}</div>
+      <p class="t-corpo" style="color:var(--texto-claro)">${escapar(a.explicacao)}</p>
+    </div>`
 }
 
-const telaRelampago = ag => `
-  <h1>A pergunta relâmpago</h1>
-  <p class="legenda-tela">A mesma pergunta. A única diferença foi o cronômetro.</p>
-  <div class="linhas">
-    ${linha('Com 10 segundos',
-      fatias(ag.relampago.cronometro.acertos,
-             ag.relampago.cronometro.total - ag.relampago.cronometro.acertos - ag.relampago.cronometro.expirados,
-             ag.relampago.cronometro.expirados), ag.relampago.cronometro.total)}
-    ${linha('Sem cronômetro',
-      fatias(ag.relampago.controle.acertos,
-             ag.relampago.controle.total - ag.relampago.controle.acertos - ag.relampago.controle.expirados,
-             ag.relampago.controle.expirados), ag.relampago.controle.total)}
-  </div>
-  ${LEGENDA}
-  <p class="regra">Se veio com link, abra o link. São trinta segundos.</p>`
+const telaRelampago = ag => {
+  const grupo = (nome, g, cor) => `
+    <div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px">
+        <div class="disp t-subtitulo" style="color:${cor}">${nome}</div>
+        <div class="num" style="font-size:clamp(30px,4.5vw,58px); color:${cor}">${g.percentual}%</div>
+      </div>
+      ${barra(fatias(g.acertos, g.total - g.acertos - g.expirados, g.expirados))}
+    </div>`
+  return `
+    <div class="campo branco" style="grid-column:1/13; grid-row:2/3; justify-content:center">
+      <h1 class="disp t-subtitulo">A mesma pergunta. Só mudou o cronômetro.</h1>
+    </div>
+    <div class="campo navy" style="grid-column:1/13; grid-row:3/7; justify-content:space-between">
+      ${grupo('Com 10 segundos', ag.relampago.cronometro, 'var(--laranja)')}
+      ${grupo('Sem cronômetro', ag.relampago.controle, 'var(--branco)')}
+      ${CHAVE(true)}
+    </div>
+    <div class="campo laranja" style="grid-column:1/13; grid-row:7/8; justify-content:center">
+      <div class="disp t-subtitulo">Se veio com link, abra o link. São trinta segundos.</div>
+    </div>`
+}
 
 const telaFechamento = () => `
-  <div class="fechamento">O Google busca.<br>A IA redige.<br><br>
-    Confiar é ótimo.<br><em>Conferir é obrigatório.</em></div>`
+  <div class="campo navy" style="grid-column:1/7; grid-row:2/8; justify-content:flex-end">
+    <div class="disp t-titulo">O Google<br>busca.<br><span style="color:var(--lilas)">A IA<br>redige.</span></div>
+  </div>
+  <div class="campo branco" style="grid-column:7/13; grid-row:2/4; justify-content:center">
+    <div class="disp t-subtitulo">Confiar<br>é ótimo.</div>
+  </div>
+  <div class="campo laranja" style="grid-column:7/13; grid-row:4/8; justify-content:center">
+    <div class="disp t-titulo">Conferir é<br>obrigatório.</div>
+  </div>`
 
 // Sobe o número em vez de estampá-lo: é o momento da revelação.
-function animarHeroi(alvo) {
+function animarHeroi (alvo) {
   const no = document.getElementById('heroi')
   if (!no) return
   const inicio = performance.now()
-  const duracao = 1400
   const passo = agora => {
-    const t = Math.min(1, (agora - inicio) / duracao)
-    const suave = 1 - Math.pow(1 - t, 3)
-    no.textContent = `${Math.round(alvo * suave)}%`
+    const t = Math.min(1, (agora - inicio) / 1500)
+    no.textContent = `${Math.round(alvo * (1 - Math.pow(1 - t, 3)))}%`
     if (t < 1) requestAnimationFrame(passo)
   }
   requestAnimationFrame(passo)
@@ -2773,8 +3114,8 @@ function animarHeroi(alvo) {
 
 function desenhar (ag) {
   const tela = document.getElementById('tela')
-  if (ag.fase === 'espera') { tela.innerHTML = telaEspera(ag); return }
-  if (ag.fase === 'respondendo') { tela.innerHTML = telaRespondendo(ag); return }
+  if (ag.fase === 'espera') { tela.innerHTML = cabeca(ag) + telaEspera(ag); return }
+  if (ag.fase === 'respondendo') { tela.innerHTML = cabeca(ag) + telaRespondendo(ag); return }
 
   const passos = montarPassos(ag)
   const passo = passos[Math.min(ag.passoDebrief, passos.length - 1)]
@@ -2785,13 +3126,13 @@ function desenhar (ag) {
     relampago: () => telaRelampago(ag),
     fechamento: () => telaFechamento()
   }
-  tela.innerHTML = desenhos[passo.tipo]()
+  tela.innerHTML = cabeca(ag) + desenhos[passo.tipo]()
   if (passo.tipo === 'placar') animarHeroi(ag.placar.percentual)
 }
 
-// Este módulo é importado em três contextos: pelo telão (que desenha), pelo
-// painel (que só quer `montarPassos`) e pelos testes (onde não há `document`).
-// Só o telão tem `#tela` — é o que autoriza abrir o EventSource daqui.
+// Este módulo é importado pelo telão (que desenha), pelo painel (que só quer
+// `montarPassos`) e pelos testes (onde não há `document`). Só o telão tem
+// `#tela` — é o que autoriza abrir o EventSource daqui.
 const raiz = typeof document !== 'undefined' && document.getElementById('tela')
 if (raiz) {
   const chave = new URLSearchParams(location.search).get('k') ?? ''
@@ -2806,7 +3147,7 @@ if (raiz) {
     if (ag.fase === 'revelado' && !mudouDePasso) return
     desenhar(ag)
   })
-  fonte.onerror = () => { raiz.innerHTML = '<p class="legenda-tela">Reconectando…</p>' }
+  fonte.onerror = () => { raiz.innerHTML = '<div class="campo navy" style="grid-column:1/13; grid-row:1/8; justify-content:center"><div class="disp t-subtitulo">Reconectando…</div></div>' }
 }
 ```
 
@@ -2828,7 +3169,7 @@ for p in 0 1 2 3 4 5 6; do
 done
 ```
 
-Conferir com a janela em 1280×720 (o tamanho típico do compartilhamento no Zoom): nenhum rótulo encavalado, nenhuma barra estourando a linha, nada exigindo rolagem horizontal, e o número do placar subindo.
+Conferir com a janela em 1280×720 (o tamanho típico do compartilhamento no Zoom) e de novo em 1920×1080: nenhum campo transbordando o próprio bloco, nenhum rótulo encavalado, os filetes de 3px visíveis entre todos os campos, e o número do placar subindo. Comparar lado a lado com o quadro "Telão" de `design/confere-ou-confia.html`.
 
 - [ ] **Step 8: Commit**
 
@@ -2873,6 +3214,8 @@ Expected: FAIL — `ENOENT: src/publico/painel.html`
 
 - [ ] **Step 3: Escrever `src/publico/painel.html`**
 
+Mesma linguagem das outras telas, com o relevo dos botões vindo de `comum.css`.
+
 ```html
 <!doctype html>
 <html lang="pt-BR">
@@ -2882,77 +3225,101 @@ Expected: FAIL — `ENOENT: src/publico/painel.html`
   <title>Painel — Confere ou Confia?</title>
   <link rel="stylesheet" href="/comum.css">
   <style>
-    body { padding: 24px; }
-    main { max-width: 760px; margin: 0 auto; display: grid; gap: 20px; }
-    .aviso { background: var(--erro); color: var(--plano); padding: 12px 16px;
-             border-radius: var(--raio); font-weight: 700; }
-    .linha-botoes { display: flex; gap: 10px; flex-wrap: wrap; }
-    button { font-family: var(--fonte); font-size: 15px; font-weight: 600; padding: 12px 18px;
-             border-radius: 10px; border: 1px solid var(--grade); background: var(--superficie);
-             color: var(--tinta); cursor: pointer; }
-    button.destaque { background: var(--acerto); border-color: var(--acerto); color: var(--plano); }
-    button.perigo { border-color: var(--erro); color: var(--erro); }
-    button:disabled { opacity: .4; cursor: default; }
-    input { font-family: var(--fonte); font-size: 15px; padding: 12px; width: 110px;
-            border-radius: 10px; border: 1px solid var(--grade);
-            background: var(--plano); color: var(--tinta); }
-    .numeros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
-    .numeros div span { display: block; font-size: 34px; font-weight: 700; }
-    .numeros div small { color: var(--tinta-3); text-transform: uppercase; letter-spacing: .06em; }
-    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em;
-         color: var(--tinta-3); margin: 0 0 12px; }
+    body { display: flex; flex-direction: column; gap: var(--filete); min-height: 100vh; }
+    .fileira { display: flex; gap: 14px; flex-wrap: wrap; }
+    .fileira.colada { gap: var(--filete); }
+    button.acao {
+      font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800;
+      text-transform: uppercase; font-size: 15px;
+      padding: 15px 22px; border: none; cursor: pointer;
+      background: var(--branco); color: var(--navy);
+      box-shadow: 5px 5px 0 var(--navy-escuro);
+      transition: transform .09s ease-out, box-shadow .09s ease-out, background .12s;
+    }
+    /* Mesmo relevo dos botões de resposta: bloco deslocado de aresta dura. */
+    button.acao:hover:not(:disabled)  { background: #f4f5f9; box-shadow: 2px 2px 0 var(--laranja); transform: translate(3px, 3px); }
+    button.acao:active:not(:disabled) { box-shadow: 0 0 0 var(--laranja); transform: translate(5px, 5px); }
+    button.acao.principal { background: var(--laranja); color: var(--navy-escuro); }
+    button.acao.principal:hover:not(:disabled) { background: var(--laranja-2); box-shadow: 2px 2px 0 var(--branco); }
+    /* Zerar é destrutivo: mesma base branca, anel e texto em laranja. */
+    button.acao.fantasma { color: var(--laranja); box-shadow: inset 0 0 0 2px var(--laranja), 5px 5px 0 var(--navy-escuro); }
+    button.acao.fantasma:hover { box-shadow: inset 0 0 0 2px var(--laranja), 2px 2px 0 var(--laranja); }
+    button.acao.fantasma:active { box-shadow: inset 0 0 0 2px var(--laranja); }
+    /* Desabilitado não é apertável, então não fica levantado. */
+    button.acao:disabled,
+    button.acao:disabled:hover { background: #3a3470; color: #6a6494; cursor: default;
+                                 box-shadow: none; transform: none; }
+    input {
+      font-family: var(--display); font-variation-settings: 'wdth' 112, 'wght' 800;
+      font-size: 32px; padding: 10px 14px; width: 128px; border: none;
+      background: var(--branco); color: var(--navy); font-variant-numeric: tabular-nums;
+    }
+    label { display: flex; flex-direction: column; gap: 9px; }
+    label .etiq { color: var(--lilas); }
   </style>
 </head>
 <body>
-  <main>
-    <div class="aviso">Esta é a sua tela. Não compartilhe no Zoom — compartilhe o telão.</div>
+  <div class="cabeca etiq"><strong>Painel de controle</strong><span>Confere ou Confia?</span></div>
 
-    <section class="cartao">
-      <h2>1 · Preparar a rodada</h2>
-      <div class="linha-botoes">
-        <label>Previsão de participantes
-          <input id="previsao" type="number" min="1" max="200" value="45"></label>
-        <label>Cronômetro (s)
-          <input id="segundos" type="number" min="3" max="60" value="10"></label>
-      </div>
-      <p class="secundario" id="previsaoTexto"></p>
-      <div class="linha-botoes">
-        <button id="criar" class="destaque">Criar rodada</button>
-      </div>
-    </section>
+  <div class="campo laranja" style="flex-direction: row; align-items: center; gap: 14px; padding: 16px 20px">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+    <span class="disp" style="font-size: 19px">Esta tela é sua. Não compartilhe no Zoom — compartilhe o telão.</span>
+  </div>
 
-    <section class="cartao">
-      <h2>2 · Conduzir</h2>
-      <div class="numeros">
-        <div><span id="nConectados">0</span><small>conectados</small></div>
-        <div><span id="nRespondendo">0</span><small>respondendo</small></div>
-        <div><span id="nFinalizados">0</span><small>finalizados</small></div>
-      </div>
-      <p class="secundario">Fase: <strong id="fase">—</strong></p>
-      <div class="linha-botoes">
-        <button id="liberar" class="destaque">Liberar o início</button>
-        <button id="entradas">Fechar entradas</button>
-        <button id="revelar" class="destaque">REVELAR</button>
-      </div>
-    </section>
+  <section class="campo navy">
+    <div class="etiq" style="color: var(--lilas)">01 — Preparar a rodada</div>
+    <div class="fileira" style="align-items: flex-end; gap: 20px; margin-top: 18px">
+      <label><span class="etiq">Previsão de gente</span>
+        <input id="previsao" type="number" min="1" max="200" value="45"></label>
+      <label><span class="etiq">Cronômetro (s)</span>
+        <input id="segundos" type="number" min="3" max="60" value="10"></label>
+      <label><span class="etiq">Trava (s)</span>
+        <input id="trava" type="number" min="3" max="5" value="4"></label>
+      <button id="criar" class="acao principal">Criar rodada</button>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 22px; border-top: 1px solid #3a3470; padding-top: 18px">
+      <span class="num" id="questoesAtivas" style="font-size: 44px; color: var(--laranja)">—</span>
+      <span style="font-size: 16px; color: var(--lilas-claro); font-weight: 500" id="previsaoTexto"></span>
+    </div>
+  </section>
 
-    <section class="cartao">
-      <h2>3 · Debrief</h2>
-      <p class="secundario" id="passoTexto">—</p>
-      <div class="linha-botoes">
-        <button id="voltar">← Voltar</button>
-        <button id="avancar" class="destaque">Avançar →</button>
-      </div>
-    </section>
+  <div class="fileira colada">
+    <div class="campo branco" style="flex: 1"><div class="num" id="nConectados" style="font-size: 62px">0</div><div class="etiq" style="color: var(--texto-claro); margin-top: 12px">conectados</div></div>
+    <div class="campo laranja" style="flex: 1"><div class="num" id="nRespondendo" style="font-size: 62px">0</div><div class="etiq" style="margin-top: 12px">respondendo</div></div>
+    <div class="campo teal" style="flex: 1"><div class="num" id="nFinalizados" style="font-size: 62px">0</div><div class="etiq" style="margin-top: 12px">finalizados</div></div>
+  </div>
 
-    <section class="cartao">
-      <h2>Ensaio</h2>
-      <div class="linha-botoes">
-        <button id="zerar" class="perigo">Zerar rodada</button>
-        <a href="#" id="linkTelao" target="_blank"><button>Abrir telão</button></a>
-      </div>
-    </section>
-  </main>
+  <section class="campo navy">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <div class="etiq" style="color: var(--lilas)">02 — Conduzir</div>
+      <div class="etiq">fase&nbsp;&nbsp;<span style="color: var(--laranja)" id="fase">—</span></div>
+    </div>
+    <div class="fileira" style="margin-top: 18px">
+      <button id="liberar" class="acao">Liberar o início</button>
+      <button id="entradas" class="acao">Fechar entradas</button>
+      <button id="revelar" class="acao principal">Revelar</button>
+    </div>
+  </section>
+
+  <section class="campo navy">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <div class="etiq" style="color: var(--lilas)">03 — Debrief</div>
+      <div class="etiq" style="color: var(--lilas-claro)" id="passoTexto">—</div>
+    </div>
+    <div class="fileira" style="margin-top: 18px">
+      <button id="voltar" class="acao">Voltar</button>
+      <button id="avancar" class="acao principal">Avançar</button>
+    </div>
+  </section>
+
+  <section class="campo navy" style="flex: 1; justify-content: flex-end">
+    <div class="etiq" style="color: var(--lilas)">Ensaio</div>
+    <div class="fileira" style="margin-top: 18px">
+      <button id="zerar" class="acao fantasma">Zerar rodada</button>
+      <a href="#" id="linkTelao" target="_blank"><button class="acao">Abrir telão</button></a>
+    </div>
+  </section>
+
   <script type="module" src="/painel.js"></script>
 </body>
 </html>
@@ -2981,10 +3348,15 @@ async function enviar (rota, corpo) {
 
 function atualizarPrevisao () {
   const p = Number($('previsao').value)
-  if (!Number.isInteger(p) || p < 1) { $('previsaoTexto').textContent = ''; return }
+  if (!Number.isInteger(p) || p < 1) {
+    $('questoesAtivas').textContent = '—'
+    $('previsaoTexto').textContent = 'informe uma previsão entre 1 e 200'
+    return
+  }
   const k = calcularQuestoesAtivas(p)
+  $('questoesAtivas').textContent = k
   $('previsaoTexto').textContent =
-    `${k} questões em jogo — cerca de ${Math.round((p * 4) / k)} respostas por questão.`
+    `questões em jogo, cerca de ${Math.round((p * 4) / k)} respostas em cada uma`
 }
 
 const NOME_DO_PASSO = {
@@ -3016,7 +3388,8 @@ $('criar').addEventListener('click', async () => {
   if (!confirm('Criar uma rodada nova? A anterior sai de cena.')) return
   const r = await enviar('/api/painel/rodada', {
     previsaoParticipantes: Number($('previsao').value),
-    segundosRelampago: Number($('segundos').value)
+    segundosRelampago: Number($('segundos').value),
+    segundosTrava: Number($('trava').value)
   })
   if (r.ok) alert(`Rodada criada com ${(await r.json()).numQuestoesAtivas} questões.`)
 })
@@ -3339,6 +3712,12 @@ rtk git commit -m "feat: empacotamento Docker com Caddy e roteiro de operação"
 | Retomada por token, sem duplicar | Tasks 4, 7 |
 | Trava de resposta no banco | Tasks 1, 5, 7, 12 |
 | Cronômetro validado no servidor, expirou ≠ erro | Tasks 5, 9 |
+| Trava de armação de 4s, validada no servidor | Tasks 1, 4, 5, 7, 9 |
+| Aviso da trava a cada questão nova | Task 9 |
+| Tela de preparação antes do relâmpago | Task 9 |
+| Aviso dos 10s só para o grupo do cronômetro | Task 9 |
+| Identidade do LIB em cartaz suíço | Tasks 9, 10, 11 |
+| Botões lado a lado, empilhando só abaixo de ~305px | Task 9 |
 | Sem feedback antes da revelação | Tasks 7, 9 |
 | Gabarito nunca no canal do participante | Tasks 4, 7, 9 |
 | Três fases, três telas separadas | Tasks 4, 8, 9, 10, 11 |

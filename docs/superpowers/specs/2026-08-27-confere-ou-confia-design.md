@@ -40,6 +40,9 @@ Restrições do contexto:
 | Ritmo | Cada um no seu ritmo | Sobre Zoom, lockstep quebra com atraso e queda de conexão. |
 | Resultado | **Segurado** até você revelar | Gera expectativa e impede vazamento pela tela compartilhada. |
 | Pergunta relâmpago | **A/B**: metade com 10s, metade sem cronômetro | Prova ao vivo a tese do script sobre pressa e conferência. |
+| Trava de armação | Botões mortos por **4s** (ajustável de 3 a 5) a cada situação nova | Sem ela, o clique por reflexo entra no placar como se fosse decisão. |
+| Antes do relâmpago | **Tela de preparação** para os dois grupos | Quem tem cronômetro chega avisado; o A/B mede pressa, não susto. |
+| Identidade visual | Marca do LIB em composição de cartaz suíço | A tela é projetada para 50 pessoas; precisa de presença, não de interface. |
 | Hospedagem | VPS: Node + SQLite + Docker | Sem dependência de nuvem de terceiro no momento da apresentação. |
 
 ---
@@ -54,17 +57,26 @@ Restrições do contexto:
    automático só para se reconhecer: *Participante #17*.
 2. Tela de espera enquanto a fase da rodada é `espera`.
 3. Quando você libera, responde **4 situações**, uma por tela, dois botões
-   grandes: **🔎 Isso é BUSCA** / **✍️ Isso é REDAÇÃO**.
-4. **Nenhum feedback durante o quiz.** Ao terminar: *"Suas 4 respostas foram
-   registradas. Aguarde a revelação."*
-5. **Todos** recebem então a **pergunta relâmpago** — a mesma pergunta para o
+   grandes: **Busca** (ícone de lupa) / **Redação** (ícone de caneta).
+4. **A cada situação nova os botões nascem travados por 4 segundos.** Uma faixa
+   avisa — *"leia a situação · os botões liberam em 3s"* — com uma linha que
+   preenche. Enquanto travados, os botões perdem o relevo e ficam apagados.
+5. **Nenhum feedback durante o quiz.** Ao terminar as quatro, uma **tela de
+   preparação**: *"Mais uma, e acabou"* e um botão **Estou pronto**. Quem está
+   no grupo do cronômetro lê ali que a próxima tem 10 segundos; para o outro
+   grupo a tela não menciona tempo nenhum.
+6. **Todos** recebem então a **pergunta relâmpago** — a mesma pergunta para o
    público inteiro. Só muda uma coisa: metade vê um cronômetro de 10s correndo,
    a outra metade não vê cronômetro nenhum. Ela usa outro eixo, o que dá nome à
-   dinâmica: **Confio** / **Confiro**.
-6. No instante em que você revela, a tela dela acende junto com o telão e
+   dinâmica: **Confio** / **Confiro**. Aqui **não há trava**: a tela de
+   preparação já cumpriu esse papel, e comer 4 dos 10 segundos mataria a
+   pergunta.
+7. Ao terminar: *"Respostas registradas. Ninguém sabe o resultado ainda. Nem
+   você."*
+8. No instante em que você revela, a tela dela acende junto com o telão e
    mostra o placar pessoal.
 
-O passo 4 é deliberado. Feedback imediato destruiria a segurada — a pessoa
+O passo 5 é deliberado. Feedback imediato destruiria a segurada — a pessoa
 passaria os últimos minutos sabendo o resultado enquanto você constrói o
 suspense. Também fecha uma brecha real: o gabarito nunca chega ao navegador do
 participante antes da hora.
@@ -107,6 +119,47 @@ Cada passo avança no seu clique.
 4. **O A/B do relâmpago** — *"quem teve 10 segundos acertou X%. Quem teve tempo
    acertou Y%. Vocês são as mesmas pessoas."*
 5. **Fechamento** — "confiar é ótimo, conferir é obrigatório".
+
+### 3.5 Sistema visual
+
+A identidade vem da marca do LIB, extraída dos arquivos de `figma-to-bootstrap`,
+não inventada.
+
+| Papel | Cor |
+|---|---|
+| Campo dominante | navy `#29235c` |
+| Fundo e linhas do grid | navy escuro `#1d1846` |
+| Sinal | laranja `#ff8000` |
+| Campo secundário | teal `#169194` |
+| Campo claro | branco `#ffffff` |
+| Texto discreto e "sem resposta" | lilás `#8b87ad` |
+
+**Composição de cartaz suíço.** Cada tela é uma grade de 12 colunas com campos
+de cor chapados encostados uns nos outros, separados por filetes de 3px na cor
+do fundo. Sem cantos arredondados, sem sombra difusa, sem gradiente. O mesmo
+filete de 3px que separa os campos separa os segmentos das barras — o gráfico é
+parte da composição, não um widget sobreposto.
+
+**Tipografia.** Archivo (grotesca variável, peso 800, largura 116) nos blocos de
+display e nos números; Inter — a fonte da marca — no texto corrido. Ambas do
+Google Fonts, com `'Helvetica Neue', Arial, sans-serif` de reserva.
+
+**Cores dos gráficos**, sobre o campo navy: branco = acertou, laranja =
+escorregou, lilás = não respondeu a tempo. Validadas com o script do skill
+`dataviz`: separação ΔE 19,1 em daltonismo, visão normal 24,0, as três acima de
+3:1 de contraste. O laranja fica no erro de propósito — é o que puxa o olho, e o
+debrief inteiro trata de onde a sala escorregou.
+
+**Botões.** Relevo em bloco deslocado de aresta dura (6px no celular, 9px acima
+de 700px), que encolhe no hover e some no clique. Travado ou desabilitado, o
+botão perde o relevo: se não dá para apertar, não parece que dá.
+
+Na pergunta relâmpago os dois botões são visualmente idênticos — mesmo navy,
+mesmo peso. Colorir "Confiro" de laranja e "Confio" de cinza empurraria a sala
+para a resposta certa justamente na pergunta que mede decisão sob pressão.
+
+O protótipo navegável das quatro telas está em
+`design/confere-ou-confia.html` e publicado como artifact.
 
 ---
 
@@ -153,7 +206,8 @@ serem testados sem HTTP. É onde mora a lógica que pode dar errado.
 rodada
   id, criada_em, previsao_participantes, num_questoes_ativas,
   fase TEXT CHECK (fase IN ('espera','respondendo','revelado')),
-  entradas_abertas INTEGER, segundos_relampago INTEGER, passo_debrief INTEGER
+  entradas_abertas INTEGER, segundos_relampago INTEGER, segundos_trava INTEGER,
+              passo_debrief INTEGER
 
 questao
   id, texto, categoria, gabarito TEXT CHECK (gabarito IN ('busca','redacao')),
@@ -240,7 +294,24 @@ Atribuído na entrada, **alternando por ordem de chegada** (par → `cronometro`
 Ambos os grupos recebem a mesma pergunta relâmpago; só o grupo `cronometro` vê
 a contagem regressiva.
 
-### 6.4 Validação do cronômetro
+### 6.4 Trava de armação
+
+Quando uma questão é entregue ao participante, o servidor carimba `entregue_em`
+na atribuição. Uma resposta que chegue **antes de `segundos_trava`** é recusada
+com o motivo `cedo_demais` e **não é gravada** — a pessoa continua na mesma
+questão e responde assim que a trava soltar.
+
+A trava vale para as **4 situações normais**. A questão relâmpago é isenta: a
+tela de preparação já obriga uma ação deliberada antes de começar, e descontar 4
+dos 10 segundos esvaziaria a pergunta.
+
+O cliente também mostra a contagem e mantém os botões desabilitados, mas quem
+decide é o servidor. Sem isso, bastaria desligar o JavaScript para responder
+instantaneamente.
+
+Padrão de 4 segundos, ajustável de 3 a 5 no painel.
+
+### 6.5 Validação do cronômetro
 
 O servidor grava `entregue_em` ao servir a questão relâmpago. Ao receber a
 resposta, se `agora - entregue_em > segundos_relampago + 2s` (folga de rede), a
@@ -250,7 +321,7 @@ autoenvia `'expirou'` ao zerar.
 Estourar o tempo **não conta como erro**. Vira uma fatia própria no gráfico:
 sob pressão, não decidir também é resultado.
 
-### 6.5 Identidade e retomada
+### 6.6 Identidade e retomada
 
 Token anônimo gerado no primeiro acesso, guardado em `localStorage` **e** em
 cookie. Reabrir a página **retoma** a mesma sessão — não cria participante novo,
@@ -271,7 +342,8 @@ consegue alterar as respostas já gravadas.
 | Rota | Retorna |
 |---|---|
 | `POST /api/entrar` | `{ token, rotulo, fase, questoes: [{id, texto}] }` — **sem gabarito** |
-| `POST /api/responder` | `{ ok, proxima }` — **não diz se acertou** |
+| `POST /api/entregar` | carimba `entregue_em` ao exibir a questão; é o que arma a trava e, no relâmpago, o cronômetro |
+| `POST /api/responder` | `{ ok, proxima }` — **não diz se acertou**; 425 quando `cedo_demais` |
 | `GET /api/meu-resultado` | 409 enquanto a fase não for `revelado` |
 | `GET /stream` (SSE) | só mudanças de fase |
 
@@ -326,6 +398,9 @@ Lógica testável sem HTTP, em `distribuicao.js`, `respostas.js` e `agregados.js
 - Resposta duplicada para a mesma questão é rejeitada e **não altera** a
   primeira.
 - Resposta do relâmpago fora do prazo vira `'expirou'`, não erro.
+- Resposta que chega antes da trava é recusada e **nada** é gravado; a mesma
+  resposta depois da trava é aceita normalmente.
+- A questão relâmpago aceita resposta imediata: a trava não se aplica a ela.
 - Agregados por categoria e o comparativo A/B batem com dados montados à mão.
 - O relâmpago **não** entra no placar global nem no gráfico por categoria: ele
   tem eixo próprio e aparece apenas no passo 4 do debrief.
@@ -483,6 +558,12 @@ não um problema a ser evitado.
 **Público muito menor que o previsto.** Com 15 pessoas, as barras por questão
 ficam pequenas. Mitigação: o painel permite sobrescrever o número de questões
 ativas, e o piso é 6.
+
+**A trava alonga a dinâmica.** Quatro segundos por situação, quatro situações,
+são 16 segundos a mais por pessoa — irrelevante no relógio, já que todos
+respondem em paralelo. O que muda é a percepção de quem lê rápido e fica
+esperando. A faixa de aviso existe para que a espera seja lida como parte da
+regra, não como travamento do sistema.
 
 **Queda de conexão de um participante.** O token em `localStorage` retoma a
 sessão de onde parou; as respostas já gravadas permanecem.

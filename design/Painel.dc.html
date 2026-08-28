@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #1d1846; color: #ffffff;
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    }
+    a { color: #ff8000; } a:hover { color: #e67300; }
+    .tela { display: flex; flex-direction: column; gap: 3px; min-height: 100vh; background: #1d1846; }
+    .campo { padding: 22px 26px; }
+    .navy   { background: #29235c; color: #ffffff; }
+    .branco { background: #ffffff; color: #29235c; }
+    .laranja{ background: #ff8000; color: #1d1846; }
+    .teal   { background: #169194; color: #ffffff; }
+    .disp {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 116, 'wght' 800;
+      line-height: .95; letter-spacing: -.02em; text-transform: uppercase; margin: 0;
+    }
+    .num {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 112, 'wght' 800;
+      line-height: .8; letter-spacing: -.045em; font-variant-numeric: tabular-nums;
+    }
+    .etiq { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+    .cabeca { background: #29235c; color: #8b87ad; display: flex; align-items: center;
+              justify-content: space-between; padding: 0 26px; height: 44px; flex: 0 0 44px; }
+    .cabeca strong { color: #ffffff; font-weight: 600; }
+    .fileira { display: flex; gap: 14px; flex-wrap: wrap; }
+    button.acao {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 112, 'wght' 800;
+      text-transform: uppercase; font-size: 15px; letter-spacing: 0;
+      padding: 15px 22px; border: none; cursor: pointer;
+      background: #ffffff; color: #29235c;
+      box-shadow: 5px 5px 0 #1d1846;
+      transition: transform .09s ease-out, box-shadow .09s ease-out, background .12s;
+    }
+    /* Mesmo relevo dos botões de resposta: bloco deslocado de aresta dura. */
+    button.acao:hover  { background: #f4f5f9; box-shadow: 2px 2px 0 #ff8000; transform: translate(3px, 3px); }
+    button.acao:active { box-shadow: 0 0 0 #ff8000; transform: translate(5px, 5px); }
+    button.acao.principal { background: #ff8000; color: #1d1846; }
+    button.acao.principal:hover { background: #e67300; box-shadow: 2px 2px 0 #ffffff; }
+    /* Zerar é destrutivo: mesma base branca, anel e texto em laranja. */
+    button.acao.fantasma { color: #ff8000; box-shadow: inset 0 0 0 2px #ff8000, 5px 5px 0 #1d1846; }
+    button.acao.fantasma:hover { box-shadow: inset 0 0 0 2px #ff8000, 2px 2px 0 #ff8000; }
+    button.acao.fantasma:active { box-shadow: inset 0 0 0 2px #ff8000; }
+    /* Desabilitado não é apertável, então não fica levantado. */
+    button.acao:disabled,
+    button.acao:disabled:hover { background: #3a3470; color: #6a6494; cursor: default;
+                                 box-shadow: none; transform: none; }
+    input {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 112, 'wght' 800;
+      font-size: 32px; padding: 10px 14px; width: 128px; border: none;
+      background: #ffffff; color: #29235c; font-variant-numeric: tabular-nums;
+    }
+  </style>
+</helmet>
+
+<div class="tela">
+
+  <div class="cabeca etiq"><strong>Painel de controle</strong><span>Confere ou Confia?</span></div>
+
+  <div class="campo laranja" style="display: flex; align-items: center; gap: 14px; padding-top: 16px; padding-bottom: 16px">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+    <span class="disp" style="font-size: 19px">Esta tela é sua. Compartilhe o telão, não esta.</span>
+  </div>
+
+  <div class="campo navy">
+    <div class="etiq" style="color: #8b87ad">01 — Preparar a rodada</div>
+    <div class="fileira" style="align-items: flex-end; gap: 20px; margin-top: 18px">
+      <label style="display: flex; flex-direction: column; gap: 9px">
+        <span class="etiq" style="color: #8b87ad">Previsão de gente</span>
+        <input type="number" min="1" max="200" defaultValue="45" onInput="{{ mudarPrevisao }}">
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 9px">
+        <span class="etiq" style="color: #8b87ad">Cronômetro (s)</span>
+        <input type="number" min="3" max="60" defaultValue="10">
+      </label>
+      <button class="acao principal">Criar rodada</button>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 22px; border-top: 1px solid #3a3470; padding-top: 18px">
+      <span class="num" style="font-size: 44px; color: #ff8000">{{ questoesAtivas }}</span>
+      <span style="font-size: 16px; color: #c9c6de; font-weight: 500">{{ previsaoTexto }}</span>
+    </div>
+  </div>
+
+  <div class="fileira" style="gap: 3px">
+    <div class="campo branco" style="flex: 1">
+      <div class="num" style="font-size: 62px">48</div>
+      <div class="etiq" style="color: #5b5880; margin-top: 12px">conectados</div>
+    </div>
+    <div class="campo laranja" style="flex: 1">
+      <div class="num" style="font-size: 62px">4</div>
+      <div class="etiq" style="margin-top: 12px">respondendo</div>
+    </div>
+    <div class="campo teal" style="flex: 1">
+      <div class="num" style="font-size: 62px">44</div>
+      <div class="etiq" style="margin-top: 12px">finalizados</div>
+    </div>
+  </div>
+
+  <div class="campo navy">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <div class="etiq" style="color: #8b87ad">02 — Conduzir</div>
+      <div class="etiq">fase&nbsp;&nbsp;<span style="color: #ff8000">{{ fase }}</span></div>
+    </div>
+    <div class="fileira" style="margin-top: 18px">
+      <button class="acao" onClick="{{ liberar }}">Liberar o início</button>
+      <button class="acao">Fechar entradas</button>
+      <button class="acao principal" onClick="{{ revelar }}">Revelar</button>
+    </div>
+  </div>
+
+  <div class="campo navy">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <div class="etiq" style="color: #8b87ad">03 — Debrief</div>
+      <div class="etiq" style="color: #c9c6de">{{ passoTexto }}</div>
+    </div>
+    <div class="fileira" style="margin-top: 18px">
+      <button class="acao" onClick="{{ voltar }}" disabled="{{ semVoltar }}">Voltar</button>
+      <button class="acao principal" onClick="{{ avancar }}" disabled="{{ semAvancar }}">Avançar</button>
+    </div>
+  </div>
+
+  <div class="campo navy" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end">
+    <div class="etiq" style="color: #8b87ad">Ensaio</div>
+    <div class="fileira" style="margin-top: 18px">
+      <button class="acao fantasma" onClick="{{ zerar }}">Zerar rodada</button>
+      <button class="acao">Abrir telão</button>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":900,"height":820}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { previsao: 45, fase: 'espera', passo: 0 };
+  }
+
+  // A mesma fórmula do servidor: alvo de ~18 respostas por questão,
+  // par para dividir 50/50 entre busca e redação, entre 6 e 14.
+  calcularQuestoesAtivas(previsao) {
+    var k = Math.round(previsao * 4 / 18);
+    if (k % 2 !== 0) k += 1;
+    return Math.min(14, Math.max(6, k));
+  }
+
+  passos() {
+    return ['Placar', 'Categorias', 'Armadilha 1', 'Armadilha 2', 'Armadilha 3', 'Relâmpago', 'Fechamento'];
+  }
+
+  renderVals() {
+    var self = this;
+    var p = this.state.previsao;
+    var valida = p >= 1 && p <= 200;
+    var k = valida ? this.calcularQuestoesAtivas(p) : 0;
+    var revelado = this.state.fase === 'revelado';
+    var passos = this.passos();
+    var i = this.state.passo;
+
+    return {
+      fase: this.state.fase,
+      questoesAtivas: valida ? k : '—',
+      previsaoTexto: valida
+        ? ('questões em jogo, cerca de ' + Math.round(p * 4 / k) + ' respostas em cada uma')
+        : 'informe uma previsão entre 1 e 200',
+      passoTexto: revelado ? ((i + 1) + '/' + passos.length + '  ' + passos[i]) : 'depois de revelar',
+      semVoltar: !revelado || i === 0,
+      semAvancar: !revelado || i >= passos.length - 1,
+      mudarPrevisao: function (e) { self.setState({ previsao: Number(e.target.value) }); },
+      liberar: function () { self.setState({ fase: 'respondendo' }); },
+      revelar: function () { self.setState({ fase: 'revelado', passo: 0 }); },
+      avancar: function () { self.setState({ passo: Math.min(passos.length - 1, self.state.passo + 1) }); },
+      voltar: function () { self.setState({ passo: Math.max(0, self.state.passo - 1) }); },
+      zerar: function () { self.setState({ fase: 'espera', passo: 0 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

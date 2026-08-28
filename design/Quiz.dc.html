@@ -1,0 +1,362 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #1d1846; color: #ffffff;
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+    a { color: #ff8000; } a:hover { color: #e67300; }
+    .tela { display: flex; flex-direction: column; gap: 3px; min-height: 100vh; background: #1d1846; }
+    .campo { padding: 22px 20px; }
+    .navy   { background: #29235c; color: #ffffff; }
+    .branco { background: #ffffff; color: #29235c; }
+    .laranja{ background: #ff8000; color: #1d1846; }
+    .teal   { background: #169194; color: #ffffff; }
+    .disp {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 116, 'wght' 800;
+      line-height: .95; letter-spacing: -.02em; text-transform: uppercase; margin: 0;
+    }
+    .num {
+      font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+      font-variation-settings: 'wdth' 112, 'wght' 800;
+      line-height: .8; letter-spacing: -.045em; font-variant-numeric: tabular-nums;
+    }
+    .etiq { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+    .cabeca { background: #29235c; color: #8b87ad; display: flex; align-items: center;
+              justify-content: space-between; padding: 0 20px; height: 44px; flex: 0 0 44px; }
+    .cabeca strong { color: #ffffff; font-weight: 600; }
+
+    .acoes { background: #29235c; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .aviso { display: flex; flex-direction: column; gap: 9px; }
+    .aviso .etiq { color: #ffb673; }
+    .trilha { height: 4px; background: #1d1846; }
+    .trilha i { display: block; height: 100%; background: #ff8000; }
+
+    .opcoes { display: flex; flex-wrap: wrap; gap: 14px; }
+    .opcao {
+      font-family: inherit; border: none; cursor: pointer; text-align: left;
+      flex: 1 1 150px; min-width: 0;
+      background: #ffffff; color: #29235c; padding: 18px;
+      display: flex; flex-direction: column; align-items: stretch; gap: 18px;
+      box-shadow: 6px 6px 0 #1d1846;
+      transition: transform .09s ease-out, box-shadow .09s ease-out, background .12s, opacity .2s;
+    }
+    /* Aresta dura, sem desfoque: o botão é um bloco levantado que afunda no clique. */
+    .opcao:hover:not(:disabled)  { background: #f4f5f9; box-shadow: 3px 3px 0 #ff8000; transform: translate(3px, 3px); }
+    .opcao:active:not(:disabled) { box-shadow: 0 0 0 #ff8000; transform: translate(6px, 6px); }
+    /* Travado não é apertável, então não fica levantado. */
+    .opcao:disabled { background: #e3e5ee; box-shadow: none; transform: none; cursor: default; opacity: .5; }
+    .opcao .topo { display: flex; align-items: center; justify-content: space-between; }
+    .opcao .marca { display: flex; align-items: center; justify-content: center;
+                    width: 30px; height: 30px; flex: 0 0 auto; }
+    .opcao .texto { display: flex; flex-direction: column; gap: 4px; }
+    .opcao .rotulo { font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+                     font-variation-settings: 'wdth' 116, 'wght' 800;
+                     text-transform: uppercase; font-size: 21px; line-height: 1; }
+    .opcao .nota { font-size: 13px; font-weight: 500; color: #5b5880; }
+
+    /* Acima de 700px o botão cresce; a estrutura é a mesma. */
+    @media (min-width: 700px) {
+      .acoes { padding: 24px; gap: 20px; }
+      .opcoes { gap: 22px; }
+      .opcao { padding: 28px; gap: 30px; box-shadow: 9px 9px 0 #1d1846; }
+      .opcao:hover:not(:disabled)  { box-shadow: 5px 5px 0 #ff8000; transform: translate(4px, 4px); }
+      .opcao:active:not(:disabled) { box-shadow: 0 0 0 #ff8000; transform: translate(9px, 9px); }
+      .opcao .marca { width: 44px; height: 44px; }
+      .opcao .rotulo { font-size: 46px; }
+      .opcao .nota { font-size: 19px; }
+    }
+  </style>
+</helmet>
+
+<div class="tela">
+
+  <div class="cabeca etiq"><strong>Confere ou Confia?</strong><span>{{ marcador }}</span></div>
+
+  <sc-if value="{{ ehEspera }}" hint-placeholder-val="{{ true }}">
+    <div class="campo navy" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end">
+      <div class="disp" style="font-size: 52px">Você<br>está<br><span style="color: #ff8000">dentro.</span></div>
+      <p style="font-size: 16px; color: #c9c6de; margin: 22px 0 0; font-weight: 500">Participante #17 · aguarde o início</p>
+    </div>
+    <button onClick="{{ liberar }}" class="campo teal etiq" style="border: none; cursor: pointer; font-family: inherit; text-align: left">simular a liberação do host</button>
+  </sc-if>
+
+  <sc-if value="{{ ehQuestao }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ mostrarCronometro }}" hint-placeholder-val="{{ true }}">
+      <div class="campo" style="background: {{ fundoCronometro }}; color: #1d1846; display: flex; align-items: baseline; justify-content: space-between; padding-top: 14px; padding-bottom: 14px">
+        <span class="etiq">tempo</span>
+        <span class="num" style="font-size: 46px">{{ restante }}s</span>
+      </div>
+    </sc-if>
+    <div class="campo navy" style="flex: 1; display: flex; flex-direction: column; justify-content: center">
+      <p style="font-size: 22px; line-height: 1.36; font-weight: 500; margin: 0">{{ questao.texto }}</p>
+    </div>
+
+    <div class="acoes">
+      <sc-if value="{{ travado }}" hint-placeholder-val="{{ true }}">
+        <div class="aviso">
+          <span class="etiq">Leia a situação · responde em {{ travaSegundos }}s</span>
+          <div class="trilha"><i style="width: {{ travaLargura }}"></i></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ questao.ehRelampago }}" hint-placeholder-val="{{ true }}">
+        <div class="opcoes">
+          <button class="opcao" onClick="{{ escolherA }}" disabled="{{ travado }}">
+            <span class="topo">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#29235c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+              <span class="marca" style="background: #29235c">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+              </span>
+            </span>
+            <span class="texto"><span class="rotulo">Confio</span><span class="nota">uso do jeito que veio</span></span>
+          </button>
+          <button class="opcao" onClick="{{ escolherB }}" disabled="{{ travado }}">
+            <span class="topo">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#29235c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>
+              <span class="marca" style="background: #29235c">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+              </span>
+            </span>
+            <span class="texto"><span class="rotulo">Confiro</span><span class="nota">abro o link antes</span></span>
+          </button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ questao.ehNormal }}" hint-placeholder-val="{{ true }}">
+        <div class="opcoes">
+          <button class="opcao" onClick="{{ escolherA }}" disabled="{{ travado }}">
+            <span class="topo">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.6-4.6"></path></svg>
+              <span class="marca" style="background: #ff8000">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1d1846" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+              </span>
+            </span>
+            <span class="texto"><span class="rotulo">Busca</span><span class="nota">vá à fonte</span></span>
+          </button>
+          <button class="opcao" onClick="{{ escolherB }}" disabled="{{ travado }}">
+            <span class="topo">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#169194" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3z"></path><path d="M13.5 6.5l4 4"></path></svg>
+              <span class="marca" style="background: #169194">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+              </span>
+            </span>
+            <span class="texto"><span class="rotulo">Redação</span><span class="nota">a IA resolve</span></span>
+          </button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehPreparacao }}" hint-placeholder-val="{{ true }}">
+    <div class="campo navy" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end">
+      <div class="etiq" style="color: #8b87ad">Última</div>
+      <div class="disp" style="font-size: 52px; margin-top: 14px">Mais<br>uma,<br><span style="color: #ff8000">e acabou.</span></div>
+    </div>
+    <sc-if value="{{ avisarCronometro }}" hint-placeholder-val="{{ true }}">
+      <div class="campo laranja" style="display: flex; align-items: center; gap: 14px">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
+        <span class="disp" style="font-size: 21px">Esta tem 10 segundos.<br>Comece quando estiver pronto.</span>
+      </div>
+    </sc-if>
+    <div class="acoes">
+      <div class="opcoes">
+        <button class="opcao" onClick="{{ comecarRelampago }}">
+          <span class="topo">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z"></path></svg>
+            <span class="marca" style="background: #ff8000">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1d1846" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+            </span>
+          </span>
+          <span class="texto"><span class="rotulo">Estou pronto</span><span class="nota">{{ notaPreparacao }}</span></span>
+        </button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ehAguardando }}" hint-placeholder-val="{{ true }}">
+    <div class="campo navy" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end">
+      <div class="disp" style="font-size: 46px">Respostas<br>registradas.</div>
+      <p style="font-size: 16px; color: #c9c6de; margin: 22px 0 0; font-weight: 500">Ninguém sabe o resultado ainda. Nem você.</p>
+    </div>
+    <div class="campo teal etiq">aguarde a revelação</div>
+  </sc-if>
+
+  <sc-if value="{{ ehResultado }}" hint-placeholder-val="{{ true }}">
+    <div class="campo laranja" style="display: flex; align-items: flex-end; justify-content: space-between; padding-top: 30px; padding-bottom: 26px">
+      <div class="disp" style="font-size: 26px">Você<br>acertou</div>
+      <div class="num" style="font-size: 108px">{{ acertos }}<span style="font-size: 46px">/4</span></div>
+    </div>
+    <sc-for list="{{ itens }}" as="i" hint-placeholder-count="4">
+      <div class="campo navy">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <i style="width: 12px; height: 12px; display: block; background: {{ i.cor }}"></i>
+          <span class="etiq" style="color: {{ i.cor }}">{{ i.veredito }}</span>
+        </div>
+        <p style="font-size: 15px; line-height: 1.42; margin: 12px 0 8px; font-weight: 500">{{ i.texto }}</p>
+        <p style="font-size: 14px; line-height: 1.42; margin: 0; color: #8b87ad">{{ i.regra }}</p>
+      </div>
+    </sc-for>
+    <div class="campo branco">
+      <div class="disp" style="font-size: 24px">Confiar é ótimo.<br><span style="color: #ff8000">Conferir é obrigatório.</span></div>
+    </div>
+  </sc-if>
+
+  <div style="position: fixed; right: 12px; bottom: 12px; display: flex; gap: 3px">
+    <button onClick="{{ reiniciar }}" class="etiq" style="border: none; background: #29235c; color: #8b87ad; cursor: pointer; font-family: inherit; padding: 8px 12px">reiniciar</button>
+    <button onClick="{{ pularParaFim }}" class="etiq" style="border: none; background: #ff8000; color: #1d1846; cursor: pointer; font-family: inherit; padding: 8px 12px">revelar</button>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"grupo":{"editor":"enum","options":["cronometro","controle"],"default":"cronometro","section":"Relâmpago"},"segundosTrava":{"editor":"range","min":3,"max":5,"step":1,"default":4,"unit":"s","section":"Trava"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { passo: 0, escolhas: [], restante: 10, travaMs: 0 };
+  }
+
+  segundosTrava() { return this.props.segundosTrava ?? 4; }
+
+  perguntas() {
+    return [
+      { gabarito: 'busca',
+        texto: 'Você está fechando a proposta para uma montadora e quer abrir com um dado de impacto: quanto o TPS reduziu o lead time nos primeiros anos da Toyota. A IA devolve um percentual redondo, com o nome do livro, o autor e o ano.',
+        regra: 'Dado com citação é onde a alucinação chega mais convincente. O estudo pode simplesmente não existir.' },
+      { gabarito: 'redacao',
+        texto: 'O cliente mandou três atas de gemba, 40 páginas no total. Você precisa das cinco dores recorrentes para a pauta de amanhã.',
+        regra: 'O conteúdo é seu. Ela não precisa inventar nada, só reorganizar o que você deu.' },
+      { gabarito: 'busca',
+        texto: 'Você quer resumir para a equipe um artigo da Harvard Business Review sobre gestão visual. Você tem o título e o autor, mas não tem o PDF.',
+        regra: 'Parece resumir. Mas ela não leu o artigo — vai redigir um resumo plausível de algo que não viu.' },
+      { gabarito: 'redacao',
+        texto: 'Você precisa de 15 perguntas para uma entrevista de diagnóstico com líderes de produção.',
+        regra: 'Não há fato a verificar. É geração pura. Muita gente marca busca por insegurança.' },
+      { gabarito: 'confiro', relampago: true,
+        texto: 'A IA te deu o dado que faltava — e veio com link para a fonte. Sua apresentação é em 20 minutos.',
+        regra: 'O script é explícito: se veio com link, abra o link. Trinta segundos separam as duas histórias possíveis.' }
+    ];
+  }
+
+  pararCronometro() { if (this.cron) { clearInterval(this.cron); this.cron = null; } }
+  pararTrava() { if (this.travaTimer) { clearInterval(this.travaTimer); this.travaTimer = null; } }
+
+  // Trava de armação: a questão aparece, os botões só liberam depois de N
+  // segundos. Impede a resposta por reflexo, que contaminaria o placar.
+  armarTrava() {
+    var self = this;
+    var total = this.segundosTrava() * 1000;
+    var inicio = Date.now();
+    this.pararTrava();
+    this.setState({ travaMs: total });
+    this.travaTimer = setInterval(function () {
+      var falta = Math.max(0, total - (Date.now() - inicio));
+      self.setState({ travaMs: falta });
+      if (falta === 0) self.pararTrava();
+    }, 80);
+  }
+
+  iniciarCronometro() {
+    var self = this;
+    this.pararCronometro();
+    this.setState({ restante: 10 });
+    this.cron = setInterval(function () {
+      var r = self.state.restante - 1;
+      if (r <= 0) { self.pararCronometro(); self.registrar('expirou'); }
+      else self.setState({ restante: r });
+    }, 1000);
+  }
+
+  registrar(escolha) {
+    this.pararCronometro();
+    this.setState({ escolhas: this.state.escolhas.concat([escolha]), passo: this.state.passo + 1 });
+  }
+
+  ajustarTemporizadores(passoAnterior, grupoAnterior) {
+    var p = this.state.passo;
+    var mudouPasso = p !== passoAnterior;
+    // As 4 normais têm trava. O relâmpago não: a tela de preparação já fez esse papel.
+    if (p >= 1 && p <= 4) { if (mudouPasso) this.armarTrava(); }
+    else { this.pararTrava(); if (this.state.travaMs !== 0) this.setState({ travaMs: 0 }); }
+
+    var noRelampago = p === 6;
+    var comCronometro = this.props.grupo === 'cronometro';
+    if (noRelampago && comCronometro && (mudouPasso || grupoAnterior !== this.props.grupo)) this.iniciarCronometro();
+    if (!noRelampago || !comCronometro) this.pararCronometro();
+  }
+
+  componentDidMount() { this.ajustarTemporizadores(-1, this.props.grupo); }
+  componentDidUpdate(prevProps, prevState) { this.ajustarTemporizadores(prevState.passo, prevProps.grupo); }
+  componentWillUnmount() { this.pararCronometro(); this.pararTrava(); }
+
+  renderVals() {
+    var self = this;
+    var p = this.state.passo;
+    var perguntas = this.perguntas();
+    var indice = p <= 4 ? p - 1 : 4;
+    var atual = perguntas[Math.max(0, Math.min(4, indice))];
+    var ehQuestao = (p >= 1 && p <= 4) || p === 6;
+    var relampago = p === 6;
+    var total = this.segundosTrava() * 1000;
+
+    var itens = perguntas.slice(0, 4).map(function (q, n) {
+      var acertou = self.state.escolhas[n] === q.gabarito;
+      return {
+        texto: q.texto, regra: q.regra,
+        veredito: acertou ? 'Acertou' : 'Escorregou',
+        cor: acertou ? '#ffffff' : '#ff8000'
+      };
+    });
+
+    var marcador = 'Participante #17';
+    if (p >= 1 && p <= 4) marcador = 'Situação ' + p + ' de 4';
+    if (p === 5) marcador = 'Prepare-se';
+    if (p === 6) marcador = 'Relâmpago';
+    if (p === 8) marcador = 'Resultado';
+
+    return {
+      questao: {
+        texto: atual.texto,
+        ehRelampago: relampago,
+        ehNormal: ehQuestao && !relampago
+      },
+      marcador: marcador,
+      restante: this.state.restante,
+      fundoCronometro: this.state.restante <= 3 ? '#ff8000' : '#ffffff',
+      mostrarCronometro: relampago && this.props.grupo === 'cronometro',
+      travado: this.state.travaMs > 0,
+      travaSegundos: Math.ceil(this.state.travaMs / 1000),
+      travaLargura: ((total - this.state.travaMs) / total * 100) + '%',
+      avisarCronometro: this.props.grupo === 'cronometro',
+      notaPreparacao: this.props.grupo === 'cronometro' ? 'o cronômetro começa agora' : 'sem pressa',
+      ehEspera: p === 0,
+      ehQuestao: ehQuestao,
+      ehPreparacao: p === 5,
+      ehAguardando: p === 7,
+      ehResultado: p === 8,
+      itens: itens,
+      acertos: itens.filter(function (i) { return i.veredito === 'Acertou'; }).length,
+      escolherA: function () { self.registrar(relampago ? 'confio' : 'busca'); },
+      escolherB: function () { self.registrar(relampago ? 'confiro' : 'redacao'); },
+      comecarRelampago: function () { self.setState({ passo: 6 }); },
+      liberar: function () { self.setState({ passo: 1 }); },
+      reiniciar: function () { self.pararCronometro(); self.pararTrava(); self.setState({ passo: 0, escolhas: [], restante: 10, travaMs: 0 }); },
+      pularParaFim: function () { self.pararCronometro(); self.pararTrava(); self.setState({ passo: 8 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>
