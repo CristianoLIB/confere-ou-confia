@@ -103,6 +103,10 @@ async function responder (questao, escolha) {
     // 425: chegou antes da trava do servidor. Redesenha a mesma questão.
     if (SESSAO_PERDIDA.includes(r.status)) { await reentrar(); return }
     if (r.status === 425) { estado.enviando = false; desenhar(); return }
+    if (r.status === 400 && (await r.clone().json().catch(() => ({}))).motivo === 'fase_invalida') {
+      // A dinâmica fechou entre o clique e a chegada: nada a gravar.
+      estado.enviando = false; desenhar(); return
+    }
     if (r.ok || r.status === 409 || r.status === 400) estado.respondidas.add(questao.id)
   } catch {
     estado.enviando = false
@@ -238,15 +242,25 @@ function desenharResultado () {
       <div class="disp disp-m">Você<br>acertou</div>
       <div class="num num-xl">${r.acertos}<span class="num-l">/${r.total}</span></div>
     </div>
-    ${r.itens.map(i => `
+    ${r.itens.filter(i => !i.eRelampago && i.semResposta).length ? `
+    <div class="campo navy" style="flex-direction:row; align-items:center; gap:12px; padding-top:14px; padding-bottom:14px">
+      <i class="quadrado" style="background:var(--lilas)"></i>
+      <span class="etiq" style="color:var(--lilas-claro)">${r.itens.filter(i => !i.eRelampago && i.semResposta).length} pergunta(s) ficaram sem resposta</span>
+    </div>` : ''}
+    ${r.itens.map(i => {
+      // Três estados, não dois: quem não chegou a responder não errou.
+      const cor = i.correta ? '#ffffff' : (i.semResposta ? '#8b87ad' : '#ff8000')
+      const veredito = i.correta ? 'Acertou' : (i.semResposta ? 'Não respondeu' : 'Escorregou')
+      return `
       <div class="campo navy">
         <div style="display:flex; align-items:center; gap:10px">
-          <i class="quadrado" style="background:${i.correta ? '#ffffff' : '#ff8000'}"></i>
-          <span class="etiq" style="color:${i.correta ? '#ffffff' : '#ff8000'}">${i.correta ? 'Acertou' : 'Escorregou'}</span>
+          <i class="quadrado" style="background:${cor}"></i>
+          <span class="etiq" style="color:${cor}">${veredito}</span>
         </div>
         <p style="font-size:15px; line-height:1.42; margin:12px 0 8px; font-weight:500">${escapar(i.texto)}</p>
         <p style="font-size:14px; line-height:1.42; margin:0; color:var(--lilas)">${escapar(i.explicacao)}</p>
-      </div>`).join('')}
+      </div>`
+    }).join('')}
     <div class="campo branco">
       <div class="disp disp-m">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
     </div>`
@@ -266,32 +280,9 @@ async function desenhar () {
     return
   }
 
-  if (estado.fase === 'encerrado') {
-    marcador.textContent = 'Encerrado'
-    tela.innerHTML = `
-      <div class="campo navy" style="flex:1; justify-content:flex-end">
-        <div class="disp disp-l">Dinâmica<br><span style="color:var(--laranja)">encerrada.</span></div>
-        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">Obrigado por participar.</p>
-      </div>
-      <div class="campo branco">
-        <div class="disp disp-m">Confiar é ótimo.<br><span style="color:var(--laranja)">Conferir é obrigatório.</span></div>
-      </div>`
-    return
-  }
-
-  if (estado.fase === 'revelado' && !estado.resultadoLiberado) {
-    marcador.textContent = 'Revelando'
-    tela.innerHTML = `
-      <div class="campo navy" style="flex:1; justify-content:flex-end">
-        <div class="etiq" style="color:var(--lilas)">Olhe para o telão</div>
-        <div class="disp disp-l" style="margin-top:14px">O resultado<br>da sala está<br><span style="color:var(--laranja)">saindo.</span></div>
-        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">O seu aparece aqui daqui a pouco.</p>
-      </div>
-      <div class="campo laranja etiq">aguarde o fim da apresentação</div>`
-    return
-  }
-
-  if (estado.fase === 'revelado' || estado.resultadoLiberado) {
+  // O fechamento do debrief (ou o encerramento) é o corte definitivo: quem
+  // não terminou fica com o que respondeu, o resto marcado como em branco.
+  if (estado.resultadoLiberado) {
     if (!estado.resultado) {
       const r = await fetch('/api/meu-resultado')
       if (SESSAO_PERDIDA.includes(r.status)) { reentrar(); return }
@@ -303,22 +294,35 @@ async function desenhar () {
   }
 
   const questao = pendente()
-  if (!questao) {
-    tela.innerHTML = `
-      <div class="campo navy" style="flex:1; justify-content:flex-end">
-        <div class="disp disp-l">Respostas<br>registradas.</div>
-        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">Ninguém sabe o resultado ainda. Nem você.</p>
-      </div>
-      <div class="campo teal etiq">aguarde a revelação</div>`
+
+  // Revelar é encerramento silencioso: o telão vai para o debrief, mas quem
+  // ainda tem pergunta pela frente continua respondendo sem ser interrompido.
+  if (questao && (estado.fase === 'respondendo' || estado.fase === 'revelado')) {
+    if (questao.eRelampago && !estado.preparado && estado.segundosPreparacao > 0) {
+      desenharPreparacao(questao); return
+    }
+    desenharQuestao(questao)
     return
   }
 
-  // A tela de preparação entra entre a quarta situação e o relâmpago.
-  // Zero segundos no painel pula a tela e vai direto para a chamada.
-  if (questao.eRelampago && !estado.preparado && estado.segundosPreparacao > 0) {
-    desenharPreparacao(questao); return
+  if (estado.fase === 'revelado') {
+    marcador.textContent = 'Revelando'
+    tela.innerHTML = `
+      <div class="campo navy" style="flex:1; justify-content:flex-end">
+        <div class="etiq" style="color:var(--lilas)">Olhe para o telão</div>
+        <div class="disp disp-l" style="margin-top:14px">O resultado<br>da sala está<br><span style="color:var(--laranja)">saindo.</span></div>
+        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">O seu aparece aqui daqui a pouco.</p>
+      </div>
+      <div class="campo laranja etiq">aguarde o fim da apresentação</div>`
+    return
   }
-  desenharQuestao(questao)
+
+  tela.innerHTML = `
+    <div class="campo navy" style="flex:1; justify-content:flex-end">
+      <div class="disp disp-l">Respostas<br>registradas.</div>
+      <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">Ninguém sabe o resultado ainda. Nem você.</p>
+    </div>
+    <div class="campo teal etiq">aguarde a revelação</div>`
 }
 
 function ouvirEstado () {

@@ -3833,3 +3833,30 @@ sobrescreve depois — `.enunciado-caixa` com `flex: 1 1 auto`, e os campos com
 **Verificado** nas quatro telas: resultado sem esmagamento e com o branco
 cobrindo o texto; questão com o enunciado ainda encolhendo e os botões à vista
 sem rolagem; painel e os 7 passos do telão sem cortes.
+
+## Correção (2026-08-28): quem não termina a tempo
+
+**O que existia:** revelar cortava na hora quem estava respondendo
+(`fase_invalida`), e o cliente tratava a recusa como sucesso — a pessoa avançava
+pelas telas achando que respondia, sem nada ser gravado. As respostas parciais
+entravam no placar. E no resultado, pergunta em branco aparecia como
+"Escorregou".
+
+**Correção em três partes:**
+
+- `registrarResposta` aceita enquanto a fase for `respondendo`, ou `revelado`
+  com o placar ainda represado. Importa `resultadoLiberado` de `agregados.js`
+  (sem ciclo: agregados não importa respostas).
+- `calcularAgregados` e `listarSessoes` exigem `finalizado_em IS NOT NULL` em
+  toda agregação de resposta. Novo campo `foraDoPlacar` para o painel avisar.
+- `resultadoPessoal` devolve `semResposta`; a tela do participante mostra
+  "Não respondeu" em lilás e conta quantas ficaram em branco.
+
+**Ordem das telas do quiz reescrita:** a tela de "Revelando" só aparece depois
+de checar se sobrou pergunta — antes ela capturava todo mundo. E `fase_invalida`
+deixou de ser tratado como resposta gravada.
+
+**Verificado no navegador:** com 5 finalizados, revelei no meio da 3ª pergunta —
+a pessoa continuou vendo a pergunta e terminou (placar foi a 24 decisões de 6).
+E num segundo participante que parou na 1ª, o fechamento mostrou 0/4 com as
+cinco marcadas como "Não respondeu".

@@ -75,10 +75,14 @@ function desenhar (ag) {
   $('encerrar').disabled = ag.fase === 'encerrado'
   $('voltar').disabled = !revelado || indice === 0
   $('avancar').disabled = !revelado || indice >= passos.length - 1
-  // O host precisa saber que o placar pessoal ainda está represado.
-  $('gateTexto').textContent = ag.resultadoLiberado
+  // O host precisa saber que o placar pessoal ainda está represado, e quantas
+  // pessoas seguem respondendo sem entrar na conta.
+  const pendentes = ag.foraDoPlacar
+    ? ` · ${ag.foraDoPlacar} ainda respondendo, fora do placar`
+    : ''
+  $('gateTexto').textContent = (ag.resultadoLiberado
     ? 'resultado individual liberado nas telas dos participantes'
-    : (revelado ? 'placar pessoal represado — libera no último passo' : 'placar pessoal represado')
+    : (revelado ? 'placar pessoal represado — libera no último passo' : 'placar pessoal represado')) + pendentes
   $('gateTexto').style.color = ag.resultadoLiberado ? 'var(--laranja)' : 'var(--lilas)'
 }
 
@@ -153,7 +157,10 @@ $('entradas').addEventListener('click', () =>
 $('revelar').addEventListener('click', async () => {
   const ok = await confirmar({
     titulo: 'Revelar o resultado?',
-    texto: 'O telão começa o debrief. O placar de cada participante continua represado até você chegar ao fechamento.',
+    texto: 'O telão começa o debrief. Quem ainda está respondendo termina em paz, e o placar de cada um continua represado até você chegar ao fechamento.',
+    detalhe: (atual?.foraDoPlacar ?? 0) > 0
+      ? `${atual.foraDoPlacar} pessoa(s) ainda respondendo — só entram no placar se terminarem antes do fechamento.`
+      : '',
     rotuloConfirmar: 'Revelar'
   })
   if (ok) enviar('/api/painel/fase', { fase: 'revelado' })
@@ -161,7 +168,7 @@ $('revelar').addEventListener('click', async () => {
 $('encerrar').addEventListener('click', async () => {
   const ok = await confirmar({
     titulo: 'Encerrar para todos?',
-    texto: 'Quem está no quiz vê a tela de encerrado e ninguém novo entra. As respostas ficam guardadas.',
+    texto: 'Ninguém novo entra, quem está respondendo para na hora, e o placar pessoal aparece na tela de cada um — inclusive de quem não terminou.',
     rotuloConfirmar: 'Encerrar'
   })
   if (ok) enviar('/api/painel/fase', { fase: 'encerrado' })

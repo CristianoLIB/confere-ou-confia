@@ -1,3 +1,5 @@
+import { resultadoLiberado } from './agregados.js'
+
 const FOLGA_DE_REDE_MS = 2_000
 const ESCOLHAS_NORMAIS = ['busca', 'redacao']
 const ESCOLHAS_RELAMPAGO = ['confio', 'confiro']
@@ -19,7 +21,8 @@ export function registrarResposta (db, {
 }) {
   const contexto = db.prepare(`
     SELECT a.entregue_em, q.gabarito, q.e_relampago,
-           p.grupo_relampago, r.fase, r.segundos_relampago, r.segundos_trava
+           p.grupo_relampago, r.id rodada_id, r.fase, r.passo_debrief,
+           r.segundos_relampago, r.segundos_trava
     FROM atribuicao a
     JOIN questao q      ON q.id = a.questao_id
     JOIN participante p ON p.id = a.participante_id
@@ -28,7 +31,15 @@ export function registrarResposta (db, {
   `).get(participanteId, questaoId)
 
   if (!contexto) return { registrado: false, motivo: 'nao_atribuida' }
-  if (contexto.fase !== 'respondendo') return { registrado: false, motivo: 'fase_invalida' }
+
+  // Revelar é um encerramento silencioso: o telão vai para o debrief, mas
+  // quem está no meio das perguntas termina em paz. Quem não terminar até o
+  // fechamento — quando o placar pessoal abre — fica com o que respondeu.
+  const aindaAceita = contexto.fase === 'respondendo' ||
+    (contexto.fase === 'revelado' && !resultadoLiberado(db, {
+      id: contexto.rodada_id, fase: contexto.fase, passo_debrief: contexto.passo_debrief
+    }))
+  if (!aindaAceita) return { registrado: false, motivo: 'fase_invalida' }
 
   const permitidas = contexto.e_relampago ? ESCOLHAS_RELAMPAGO : ESCOLHAS_NORMAIS
   if (!permitidas.includes(escolha)) return { registrado: false, motivo: 'escolha_invalida' }
@@ -86,7 +97,10 @@ export function resultadoPessoal (db, participanteId) {
     explicacao: l.explicacao,
     eRelampago: Boolean(l.e_relampago),
     escolha: l.escolha,
-    correta: Boolean(l.correta)
+    correta: Boolean(l.correta),
+    // Sem escolha é diferente de errar: quem não chegou a responder não
+    // escorregou, ficou sem tempo.
+    semResposta: l.escolha === null || l.escolha === 'expirou'
   }))
   const normais = itens.filter(i => !i.eRelampago)
   return {

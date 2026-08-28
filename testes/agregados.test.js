@@ -100,3 +100,27 @@ test('rodada sem nenhuma resposta devolve zeros em vez de NaN', () => {
   assert.equal(ag.relampago.cronometro.percentual, 0)
   assert.equal(ag.conectados, 0)
 })
+
+test('PLACAR: quem não terminou fica de fora até finalizar', () => {
+  const { db, rodada } = montar({ participantes: 5, acertosDesejados: 4 })
+  const meio = entrarParticipante(db, rodada.id, 'inacabado').participante
+  const qs = questoesDoParticipante(db, meio.id)
+  for (const q of qs) marcarEntregue(db, meio.id, q.id, PASSADO)
+  registrarResposta(db, { participanteId: meio.id, questaoId: qs[0].id, escolha: 'busca' })
+  registrarResposta(db, { participanteId: meio.id, questaoId: qs[1].id, escolha: 'busca' })
+
+  const ag = calcularAgregados(db, rodada.id)
+  assert.equal(ag.conectados, 6, 'ele conta como presente')
+  assert.equal(ag.respondendo, 1)
+  assert.equal(ag.foraDoPlacar, 1, 'o painel precisa avisar o host')
+  assert.equal(ag.placar.decisoes, 20, 'mas as 2 respostas dele não entram: 5 × 4')
+  assert.equal(ag.porCategoria.reduce((s, c) => s + c.total, 0), 20)
+
+  // Ao terminar, entra.
+  for (const q of qs.slice(2)) {
+    registrarResposta(db, { participanteId: meio.id, questaoId: q.id, escolha: q.eRelampago ? 'confiro' : 'busca' })
+  }
+  const depois = calcularAgregados(db, rodada.id)
+  assert.equal(depois.foraDoPlacar, 0)
+  assert.equal(depois.placar.decisoes, 24, '6 × 4')
+})

@@ -363,7 +363,30 @@ Atribuído na entrada, **alternando por ordem de chegada** (par → `cronometro`
 Ambos os grupos recebem a mesma pergunta relâmpago; só o grupo `cronometro` vê
 a contagem regressiva.
 
-### 6.4 Ritmo e chamada
+### 6.4 Quem não termina
+
+Numa turma de 30, uma ou duas pessoas sempre ficam pelo caminho. Três regras
+tratam disso sem que o host precise esperar por elas:
+
+**Revelar é um encerramento silencioso.** O telão vai para o debrief, mas quem
+está no meio das perguntas continua respondendo sem ser interrompido. O servidor
+segue aceitando respostas enquanto a fase for `revelado` e o placar pessoal não
+tiver sido liberado.
+
+**O placar conta só quem terminou.** Todas as agregações — placar global,
+categorias, armadilhas e o A/B — exigem `finalizado_em IS NOT NULL`. Respostas
+parciais não entram, então o percentual no telão não é distorcido por quem parou
+no meio. Se a pessoa terminar durante o debrief, ela entra na conta; o telão só
+repinta no próximo clique do host, então os números não mudam durante a fala.
+O painel mostra quantos estão nessa situação.
+
+**O fechamento corta em definitivo.** No último passo do debrief, o placar
+pessoal abre para todos e o servidor para de aceitar respostas. Quem não
+terminou vê o que respondeu, e as perguntas que ficaram para trás aparecem como
+**"Não respondeu"** — em lilás, nunca como "Escorregou". Errar e não chegar a
+responder são coisas diferentes, e a tela diz qual foi.
+
+### 6.5 Ritmo e chamada
 
 Quatro ajustes vivem na rodada e podem mudar durante ela: `segundos_trava`
 (0-15), `segundos_preparacao` (0-30), `segundos_relampago` (3-120) e
@@ -374,7 +397,7 @@ Preparação de zero segundos pula a tela e vai direto para a chamada. Animaçã
 `nenhuma` entra direto na pergunta. A chamada respeita `prefers-reduced-motion`:
 quem pediu menos movimento vê o aviso estático, não a animação.
 
-### 6.5 Trava de armação
+### 6.6 Trava de armação
 
 Quando uma questão é entregue ao participante, o servidor carimba `entregue_em`
 na atribuição. Uma resposta que chegue **antes de `segundos_trava`** é recusada
@@ -391,7 +414,7 @@ instantaneamente.
 
 Padrão de 4 segundos, ajustável de 3 a 5 no painel.
 
-### 6.6 Validação do cronômetro
+### 6.7 Validação do cronômetro
 
 O servidor grava `entregue_em` ao servir a questão relâmpago. Ao receber a
 resposta, se `agora - entregue_em > segundos_relampago + 2s` (folga de rede), a
@@ -401,7 +424,7 @@ autoenvia `'expirou'` ao zerar.
 Estourar o tempo **não conta como erro**. Vira uma fatia própria no gráfico:
 sob pressão, não decidir também é resultado.
 
-### 6.7 Identidade e retomada
+### 6.8 Identidade e retomada
 
 Token anônimo gerado no primeiro acesso, guardado em `localStorage` **e** em
 cookie. Reabrir a página **retoma** a mesma sessão — não cria participante novo,

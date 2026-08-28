@@ -11,10 +11,10 @@ export function listarSessoes (db) {
            SUM(CASE WHEN p.finalizado_em IS NOT NULL THEN 1 ELSE 0 END) finalizados,
            (SELECT COUNT(*) FROM resposta r JOIN questao q ON q.id = r.questao_id
               JOIN participante pp ON pp.id = r.participante_id
-             WHERE pp.rodada_id = ro.id AND q.e_relampago = 0) decisoes,
+             WHERE pp.rodada_id = ro.id AND pp.finalizado_em IS NOT NULL AND q.e_relampago = 0) decisoes,
            (SELECT COALESCE(SUM(r.correta), 0) FROM resposta r JOIN questao q ON q.id = r.questao_id
               JOIN participante pp ON pp.id = r.participante_id
-             WHERE pp.rodada_id = ro.id AND q.e_relampago = 0) acertos
+             WHERE pp.rodada_id = ro.id AND pp.finalizado_em IS NOT NULL AND q.e_relampago = 0) acertos
     FROM rodada ro
     LEFT JOIN participante p ON p.rodada_id = ro.id
     GROUP BY ro.id
@@ -31,7 +31,7 @@ export function totalPassosDebrief (db, rodadaId) {
       SELECT r.questao_id FROM resposta r
       JOIN questao q      ON q.id = r.questao_id
       JOIN participante p ON p.id = r.participante_id
-      WHERE p.rodada_id = ? AND q.e_relampago = 0
+      WHERE p.rodada_id = ? AND p.finalizado_em IS NOT NULL AND q.e_relampago = 0
       GROUP BY r.questao_id HAVING COUNT(*) >= ?
       LIMIT ?)
   `).get(rodadaId, MINIMO_PARA_ARMADILHA, MAXIMO_ARMADILHAS).c
@@ -65,7 +65,7 @@ export function calcularAgregados (db, rodadaId) {
     FROM resposta r
     JOIN questao q      ON q.id = r.questao_id
     JOIN participante p ON p.id = r.participante_id
-    WHERE p.rodada_id = ? AND q.e_relampago = 0
+    WHERE p.rodada_id = ? AND p.finalizado_em IS NOT NULL AND q.e_relampago = 0
   `).get(rodadaId)
 
   const decisoes = placarBruto.decisoes ?? 0
@@ -76,7 +76,7 @@ export function calcularAgregados (db, rodadaId) {
     FROM resposta r
     JOIN questao q      ON q.id = r.questao_id
     JOIN participante p ON p.id = r.participante_id
-    WHERE p.rodada_id = ? AND q.e_relampago = 0
+    WHERE p.rodada_id = ? AND p.finalizado_em IS NOT NULL AND q.e_relampago = 0
     GROUP BY q.categoria
   `).all(rodadaId)
     .map(l => ({ ...l, percentual: percentual(l.acertos, l.total) }))
@@ -87,7 +87,7 @@ export function calcularAgregados (db, rodadaId) {
     FROM resposta r
     JOIN questao q      ON q.id = r.questao_id
     JOIN participante p ON p.id = r.participante_id
-    WHERE p.rodada_id = ? AND q.e_relampago = 0
+    WHERE p.rodada_id = ? AND p.finalizado_em IS NOT NULL AND q.e_relampago = 0
     GROUP BY q.id
     HAVING total >= ?
   `).all(rodadaId, MINIMO_PARA_ARMADILHA)
@@ -103,7 +103,7 @@ export function calcularAgregados (db, rodadaId) {
     FROM resposta r
     JOIN questao q      ON q.id = r.questao_id
     JOIN participante p ON p.id = r.participante_id
-    WHERE p.rodada_id = ? AND q.e_relampago = 1
+    WHERE p.rodada_id = ? AND p.finalizado_em IS NOT NULL AND q.e_relampago = 1
     GROUP BY p.grupo_relampago
   `).all(rodadaId)
 
@@ -121,6 +121,8 @@ export function calcularAgregados (db, rodadaId) {
   return {
     fase: rodada.fase,
     passoDebrief: rodada.passo_debrief,
+    // Quem começou e não terminou fica de fora do placar até finalizar.
+    foraDoPlacar: presenca.respondendo ?? 0,
     conectados: presenca.conectados ?? 0,
     respondendo: presenca.respondendo ?? 0,
     finalizados: presenca.finalizados ?? 0,

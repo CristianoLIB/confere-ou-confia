@@ -74,12 +74,39 @@ test('rejeita questão que não foi atribuída ao participante', () => {
   assert.equal(r.motivo, 'nao_atribuida')
 })
 
-test('rejeita resposta fora da fase respondendo', () => {
+test('ENCERRAMENTO SILENCIOSO: revelar não derruba quem está no meio das perguntas', () => {
   const { db, rodada, participante, questoes } = cenario()
   definirFase(db, rodada.id, 'revelado')
   const r = registrarResposta(db, { participanteId: participante.id, questaoId: questoes[0].id, escolha: 'busca' })
+  assert.equal(r.registrado, true, 'o telão vai para o debrief, mas ela termina em paz')
+})
+
+test('ENCERRAMENTO SILENCIOSO: o fechamento do debrief corta em definitivo', () => {
+  const { db, rodada, participante, questoes } = cenario()
+  definirFase(db, rodada.id, 'revelado')
+  // Sem ninguém finalizado não há armadilhas: o debrief tem 4 passos.
+  db.prepare('UPDATE rodada SET passo_debrief = 3 WHERE id = ?').run(rodada.id)
+  const r = registrarResposta(db, { participanteId: participante.id, questaoId: questoes[0].id, escolha: 'busca' })
   assert.equal(r.registrado, false)
   assert.equal(r.motivo, 'fase_invalida')
+})
+
+test('encerrar para todos também recusa resposta', () => {
+  const { db, rodada, participante, questoes } = cenario()
+  definirFase(db, rodada.id, 'encerrado')
+  assert.equal(registrarResposta(db, { participanteId: participante.id, questaoId: questoes[0].id, escolha: 'busca' }).motivo, 'fase_invalida')
+})
+
+test('quem não respondeu não escorregou: o resultado distingue os dois', () => {
+  const { db, participante, questoes, gabaritoDe } = cenario()
+  const q = questoes[0]
+  registrarResposta(db, { participanteId: participante.id, questaoId: q.id, escolha: gabaritoDe(q.id) })
+  const r = resultadoPessoal(db, participante.id)
+  const respondida = r.itens.find(i => i.id === q.id)
+  const emBranco = r.itens.find(i => i.id !== q.id)
+  assert.equal(respondida.semResposta, false)
+  assert.equal(emBranco.semResposta, true, 'sem escolha é ausência, não erro')
+  assert.equal(emBranco.correta, false)
 })
 
 test('rejeita escolha do eixo errado', () => {

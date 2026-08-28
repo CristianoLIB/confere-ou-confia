@@ -213,10 +213,32 @@ test('o painel manda a trava ao criar a rodada', () => {
 // ---------- encerrar para todos ----------
 
 test('cada tela reage à fase encerrado', () => {
-  assert.match(ler('quiz.js'), /encerrado/, 'o participante precisa ver que acabou')
   assert.match(ler('telao.js'), /'encerrado'/, 'o telão vai para o fechamento')
   assert.match(ler('painel.html'), /Encerrar para todos/)
   assert.match(ler('painel.js'), /fase: 'encerrado'/)
+  assert.match(ler('painel.js'), /inclusive de quem não terminou/, 'o host precisa saber o que encerrar faz')
+})
+
+test('ENCERRAMENTO SILENCIOSO: revelar não tira a pergunta de quem ainda responde', () => {
+  const fonte = ler('quiz.js')
+  const desenhar = fonte.slice(fonte.indexOf('async function desenhar'), fonte.indexOf('function ouvirEstado'))
+  // A tela de "Revelando" só pode aparecer depois de checar se sobrou pergunta.
+  const ondeResponde = desenhar.indexOf("estado.fase === 'revelado'))")
+  const ondeEspera = desenhar.indexOf("marcador.textContent = 'Revelando'")
+  assert.ok(ondeResponde > 0 && ondeEspera > ondeResponde,
+    'quem tem pergunta pendente continua respondendo mesmo depois de revelar')
+})
+
+test('o resultado distingue quem não respondeu de quem errou', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /semResposta/)
+  assert.match(fonte, /'Não respondeu'/)
+  assert.match(fonte, /ficaram sem resposta/, 'o placar pessoal precisa dizer que sobrou pergunta em branco')
+})
+
+test('resposta recusada por fase não pode avançar a tela como se tivesse gravado', () => {
+  assert.match(ler('quiz.js'), /motivo === 'fase_invalida'/,
+    'sem isso a pessoa passa pelas perguntas achando que respondeu')
 })
 
 // ---------- gestão de questões ----------
