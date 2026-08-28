@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      ADMIN_KEY: ${ADMIN_KEY:?defina ADMIN_KEY no .env}
+      DB_PATH: /dados/confere.sqlite
+    volumes:
+      - dados:/dados
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMINIO: ${DOMINIO:?defina DOMINIO no .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+volumes:
+  dados:
+  caddy_data:
+  caddy_config:
