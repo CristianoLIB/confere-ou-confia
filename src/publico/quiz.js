@@ -288,7 +288,6 @@ async function desenhar () {
           <li><strong>Quatro situações</strong> do dia a dia, uma por vez.</li>
           <li>Em cada uma você decide: <strong>buscar na fonte</strong> ou <strong>deixar com a IA</strong>?</li>
           <li>${trava}</li>
-          <li>No fim, uma <strong>pergunta relâmpago</strong>.</li>
         </ol>
       </div>
       <div class="campo teal etiq">ninguém vê o resultado até o final</div>`

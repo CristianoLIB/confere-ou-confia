@@ -55,10 +55,11 @@ Restrições do contexto:
    fica no telão enquanto a rodada não começa. Sem login, sem nome. Recebe um rótulo
    automático só para se reconhecer: *Participante #17*.
 2. Tela de espera enquanto a fase da rodada é `espera`, com um **tutorial de
-   quatro passos**: são quatro situações, a decisão é buscar na fonte ou deixar
-   com a IA, os botões liberam depois de N segundos (o valor real da rodada), e
-   no fim vem a relâmpago. É o único momento em que dá para explicar as regras
-   sem cronômetro correndo.
+   três passos**: são quatro situações, a decisão é buscar na fonte ou deixar
+   com a IA, e os botões liberam depois de N segundos (o valor real da rodada).
+   É o único momento em que dá para explicar as regras sem cronômetro correndo.
+   A pergunta relâmpago **não é anunciada** ali: antecipá-la estragaria a
+   chamada e daria tempo de a pessoa se preparar para o que o A/B quer medir.
 3. Quando você libera, responde **4 situações**, uma por tela, dois botões
    grandes: **Busca** (ícone de lupa) / **Redação** (ícone de caneta).
 4. **A cada situação nova os botões nascem travados por 4 segundos.** Uma faixa

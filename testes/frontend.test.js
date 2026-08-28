@@ -119,9 +119,11 @@ test('a sala de espera explica a dinâmica antes de começar', () => {
   const espera = fonte.slice(fonte.indexOf("estado.fase === 'espera'"), fonte.indexOf('const questao = pendente()'))
   assert.match(espera, /Como vai ser/)
   assert.match(espera, /class="passos"/)
-  assert.equal((espera.match(/<li>/g) ?? []).length, 4, 'quatro passos: curto o bastante para caber')
+  assert.equal((espera.match(/<li>/g) ?? []).length, 3, 'três passos: curto o bastante para caber')
   // O tutorial diz o tempo real da trava, não um número inventado.
   assert.match(espera, /estado\.segundosTrava/)
+  // A relâmpago não é anunciada antes: a chamada com o raio é a surpresa.
+  assert.ok(!/relâmpago/i.test(espera), 'antecipar a relâmpago estraga o efeito e contamina o A/B')
   assert.match(ler('comum.css'), /\.passos li::before/, 'os passos são numerados por CSS')
 })
 
