@@ -3,6 +3,49 @@ const MAXIMO_ARMADILHAS = 3
 
 const percentual = (parte, total) => (total === 0 ? 0 : Math.round((parte / total) * 100))
 
+// Uma linha por rodada que teve gente, da mais recente para a mais antiga.
+export function listarSessoes (db) {
+  return db.prepare(`
+    SELECT ro.id, ro.criada_em, ro.previsao_participantes, ro.num_questoes_ativas, ro.fase,
+           COUNT(DISTINCT p.id) participantes,
+           SUM(CASE WHEN p.finalizado_em IS NOT NULL THEN 1 ELSE 0 END) finalizados,
+           (SELECT COUNT(*) FROM resposta r JOIN questao q ON q.id = r.questao_id
+              JOIN participante pp ON pp.id = r.participante_id
+             WHERE pp.rodada_id = ro.id AND q.e_relampago = 0) decisoes,
+           (SELECT COALESCE(SUM(r.correta), 0) FROM resposta r JOIN questao q ON q.id = r.questao_id
+              JOIN participante pp ON pp.id = r.participante_id
+             WHERE pp.rodada_id = ro.id AND q.e_relampago = 0) acertos
+    FROM rodada ro
+    LEFT JOIN participante p ON p.rodada_id = ro.id
+    GROUP BY ro.id
+    HAVING participantes > 0
+    ORDER BY ro.id DESC
+  `).all().map(l => ({ ...l, percentual: percentual(l.acertos, l.decisoes) }))
+}
+
+// Quantos passos o debrief terá: placar, categorias, uma tela por armadilha,
+// o relâmpago e o fechamento. O participante só vê o placar pessoal no último.
+export function totalPassosDebrief (db, rodadaId) {
+  const armadilhas = db.prepare(`
+    SELECT COUNT(*) c FROM (
+      SELECT r.questao_id FROM resposta r
+      JOIN questao q      ON q.id = r.questao_id
+      JOIN participante p ON p.id = r.participante_id
+      WHERE p.rodada_id = ? AND q.e_relampago = 0
+      GROUP BY r.questao_id HAVING COUNT(*) >= ?
+      LIMIT ?)
+  `).get(rodadaId, MINIMO_PARA_ARMADILHA, MAXIMO_ARMADILHAS).c
+  return 2 + armadilhas + 2
+}
+
+// O resultado individual fica represado até o host chegar no fechamento:
+// revelar tudo de uma vez rouba a atenção da apresentação.
+export function resultadoLiberado (db, rodada) {
+  if (rodada.fase === 'encerrado') return true
+  if (rodada.fase !== 'revelado') return false
+  return rodada.passo_debrief >= totalPassosDebrief(db, rodada.id) - 1
+}
+
 export function calcularAgregados (db, rodadaId) {
   const rodada = db.prepare('SELECT fase, passo_debrief FROM rodada WHERE id = ?').get(rodadaId)
   if (!rodada) throw new Error('rodada inexistente')

@@ -3766,3 +3766,20 @@ evita cascata quando várias chamadas falham juntas.
 **Reproduzido** com Playwright antes da correção (401 nos dois endpoints, tela
 presa) e **verificado depois** nos dois caminhos: zerar a rodada e criar rodada
 nova, ambos com a aba aberta.
+
+## Adendo (2026-08-28): gate da revelação, histórico e ajustes do telão
+
+- **Gate**: `resultadoLiberado(db, rodada)` em `agregados.js` — verdadeiro só no
+  último passo do debrief (ou na fase `encerrado`). Viaja no payload do
+  participante e barra `/api/meu-resultado` com 409. O participante vê uma tela
+  de espera; o painel mostra ao host se ainda está represado.
+- **Histórico**: `listarSessoes(db)` + rotas `/api/painel/sessoes[/:id]` e a
+  página `historico.html`. Reusa `calcularAgregados`, que já aceitava rodadaId.
+- **Categorias acentuadas**: corrigidas no JSON e migradas nos bancos existentes
+  por `acentuarCategorias()`, que renomeia no lugar e preserva as respostas.
+- **Telão**: legenda do placar junto da porcentagem; barras que dividem a altura
+  disponível em vez de altura fixa (com 8 categorias a última era cortada em
+  79px); enunciado das armadilhas maior; tela do relâmpago identificada, com
+  barras e numerais grandes; fechamento com o agradecimento centralizado.
+- **Verificação**: percorridos os 7 passos em 1280×720 medindo transbordamento
+  real dos campos — zero cortes depois do ajuste.

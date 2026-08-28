@@ -100,6 +100,8 @@ export function migrar (db) {
     db.exec('ALTER TABLE questao ADD COLUMN ativa INTEGER NOT NULL DEFAULT 1')
   }
 
+  acentuarCategorias(db)
+
   const ddl = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'rodada'").get()?.sql ?? ''
   if (!ddl.includes("'encerrado'")) {
     // Com foreign_keys ligado, DROP TABLE rodada apagaria os participantes em cascata.
@@ -116,6 +118,22 @@ export function migrar (db) {
     })()
     db.pragma('foreign_keys = ON')
   }
+}
+
+// As categorias nasceram sem acento e são texto de tela: o telão as mostra
+// como estão. Renomear no lugar preserva as respostas já dadas.
+const CATEGORIAS_ACENTUADAS = {
+  "dado estatistico": "dado estatístico",
+  "citacao e fonte": "citação e fonte",
+  "sintese de material proprio": "síntese de material próprio",
+  "adaptacao de linguagem": "adaptação de linguagem",
+  "geracao de ideias": "geração de ideias",
+  "relampago": "relâmpago"
+}
+
+function acentuarCategorias (db) {
+  const renomear = db.prepare('UPDATE questao SET categoria = ? WHERE categoria = ?')
+  for (const [velho, novo] of Object.entries(CATEGORIAS_ACENTUADAS)) renomear.run(novo, velho)
 }
 
 export function abrirBanco (caminho = process.env.DB_PATH || path.join(RAIZ, 'dados', 'confere.sqlite')) {

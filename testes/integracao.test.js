@@ -60,8 +60,10 @@ test('VAZAMENTO: o payload do canal do participante só carrega fase e cronômet
     id: 7, fase: 'respondendo', segundos_relampago: 10, segundos_trava: 4, passo_debrief: 3,
     previsao_participantes: 45, num_questoes_ativas: 10
   })
-  assert.deepEqual(Object.keys(payload).sort(), ['fase', 'rodada', 'segundosRelampago', 'segundosTrava'])
+  assert.deepEqual(Object.keys(payload).sort(),
+    ['fase', 'resultadoLiberado', 'rodada', 'segundosRelampago', 'segundosTrava'])
   assert.equal(payload.rodada, 7, 'o cliente precisa perceber quando a rodada trocou')
+  assert.equal(payload.resultadoLiberado, false, 'o gate vem fechado por padrão')
 })
 
 test('VAZAMENTO: responder não diz se acertou', async () => {
@@ -130,17 +132,109 @@ test('A TRAVA DE ARMAÇÃO pela API: pular o /api/entregar também é cedo demai
   assert.equal(db.prepare('SELECT COUNT(*) c FROM resposta').get().c, 0)
 })
 
-test('meu-resultado responde 409 antes da revelação e 200 depois', async () => {
+// Responde as 5 questões de um participante, para ele ficar finalizado.
+async function responderTudo (a, cookie, questoes) {
+  const cab = { cookie: `pt=${cookie.value}` }
+  for (const q of questoes) {
+    await a.inject({ method: 'POST', url: '/api/entregar', headers: cab, payload: { questaoId: q.id } })
+    await a.inject({ method: 'POST', url: '/api/responder', headers: cab,
+      payload: { questaoId: q.id, escolha: q.eRelampago ? 'confiro' : 'busca' } })
+  }
+}
+
+test('O GATE: revelar não libera o resultado individual; o fim do debrief libera', async () => {
   const { db, rodada, app: a } = montarApp()
   definirFase(db, rodada.id, 'respondendo')
-  const { cookie } = await entrar(a)
-  const cabecalhos = { cookie: `pt=${cookie.value}` }
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+  const cab = { cookie: `pt=${cookie.value}` }
 
-  assert.equal((await a.inject({ url: '/api/meu-resultado', headers: cabecalhos })).statusCode, 409)
+  assert.equal((await a.inject({ url: '/api/meu-resultado', headers: cab })).statusCode, 409, 'respondendo')
+
   definirFase(db, rodada.id, 'revelado')
-  const depois = await a.inject({ url: '/api/meu-resultado', headers: cabecalhos })
-  assert.equal(depois.statusCode, 200)
+  assert.equal((await a.inject({ url: '/api/meu-resultado', headers: cab })).statusCode, 409,
+    'revelar mostra o telão, não o placar pessoal')
+  assert.equal((await entrar(a, `pt=${cookie.value}`)).corpo.resultadoLiberado, false)
+
+  const { totalPassos } = (await a.inject({ url: comChave('/api/painel/estado') })).json()
+  assert.ok(totalPassos >= 4)
+  // Um passo antes do fim ainda segura.
+  await a.inject({ method: 'POST', url: comChave('/api/painel/debrief'), payload: { passo: totalPassos - 2 } })
+  assert.equal((await a.inject({ url: '/api/meu-resultado', headers: cab })).statusCode, 409)
+
+  await a.inject({ method: 'POST', url: comChave('/api/painel/debrief'), payload: { passo: totalPassos - 1 } })
+  const depois = await a.inject({ url: '/api/meu-resultado', headers: cab })
+  assert.equal(depois.statusCode, 200, 'o fechamento abre o resultado')
   assert.ok('acertos' in depois.json())
+  assert.equal((await entrar(a, `pt=${cookie.value}`)).corpo.resultadoLiberado, true)
+})
+
+test('O GATE: encerrar para todos também libera o resultado', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+  definirFase(db, rodada.id, 'encerrado')
+  assert.equal((await a.inject({ url: '/api/meu-resultado', headers: { cookie: `pt=${cookie.value}` } })).statusCode, 200)
+})
+
+// ---------- histórico de sessões ----------
+
+test('o histórico exige a chave', async () => {
+  const { app: a } = montarApp()
+  assert.equal((await a.inject({ url: '/api/painel/sessoes' })).statusCode, 401)
+  assert.equal((await a.inject({ url: '/api/painel/sessoes/1' })).statusCode, 401)
+})
+
+test('o histórico lista só sessões que tiveram gente, da mais recente para a mais antiga', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+
+  const vazia = criarRodada(db, { previsaoParticipantes: 20 })
+  const lista = (await a.inject({ url: comChave('/api/painel/sessoes') })).json()
+  assert.equal(lista.length, 1, 'a rodada sem participantes não entra')
+  assert.equal(lista[0].id, rodada.id)
+  assert.equal(lista[0].participantes, 1)
+  assert.equal(lista[0].finalizados, 1)
+  assert.equal(lista[0].decisoes, 4, 'a relâmpago não conta como decisão')
+  assert.ok(lista[0].percentual >= 0 && lista[0].percentual <= 100)
+  assert.ok(!lista.some(s => s.id === vazia.id))
+})
+
+test('o histórico devolve os agregados completos de uma sessão antiga', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+
+  // Uma rodada nova não pode apagar a leitura da anterior.
+  const nova = criarRodada(db, { previsaoParticipantes: 30 })
+  definirFase(db, nova.id, 'respondendo')
+
+  const antiga = (await a.inject({ url: comChave(`/api/painel/sessoes/${rodada.id}`) })).json()
+  assert.equal(antiga.id, rodada.id)
+  assert.equal(antiga.placar.decisoes, 4)
+  assert.ok(antiga.criadaEm)
+  assert.ok(Array.isArray(antiga.porCategoria))
+  assert.ok('relampago' in antiga)
+  assert.equal((await a.inject({ url: comChave('/api/painel/sessoes/9999') })).statusCode, 404)
+})
+
+test('as categorias chegam ao telão acentuadas', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  await responderTudo(a, cookie, corpo.questoes)
+  const { porCategoria } = (await a.inject({ url: comChave('/api/painel/estado') })).json()
+  for (const c of porCategoria) {
+    assert.ok(!/estatistico|citacao|sintese|proprio|adaptacao|geracao|relampago/.test(c.categoria),
+      `categoria sem acento no telão: ${c.categoria}`)
+  }
+  const todas = db.prepare('SELECT DISTINCT categoria FROM questao').all().map(l => l.categoria)
+  assert.ok(todas.includes('síntese de material próprio'))
+  assert.ok(todas.includes('relâmpago'))
 })
 
 test('responder sem cookie de participante é recusado', async () => {

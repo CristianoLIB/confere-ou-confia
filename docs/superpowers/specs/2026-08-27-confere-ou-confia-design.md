@@ -72,8 +72,11 @@ Restrições do contexto:
    pergunta.
 7. Ao terminar: *"Respostas registradas. Ninguém sabe o resultado ainda. Nem
    você."*
-8. No instante em que você revela, a tela dela acende junto com o telão e
-   mostra o placar pessoal.
+8. Quando você revela, a tela dela **não** mostra o placar: mostra *"o
+   resultado da sala está saindo, o seu aparece aqui daqui a pouco"*. O placar
+   pessoal só acende quando você chega ao **fechamento** do debrief. Revelar
+   tudo de uma vez faria 50 pessoas olharem para o próprio celular no momento
+   em que você começa a falar.
 9. Quando você encerra para todos, a tela vira "Dinâmica encerrada".
 
 No celular a tela **cabe na janela sem rolar**: a altura é a visível de
@@ -95,7 +98,7 @@ sobreviver à compressão de vídeo do Zoom.
 |---|---|
 | Espera | Link em destaque com QR do mesmo link, contador *"31 conectados"* |
 | Respondendo | Progresso coletivo enchendo: *"37 de 48 finalizaram"*. **Zero placar.** |
-| Revelado | A sequência de debrief, avançada pelo seu clique |
+| Revelado | A sequência de debrief, avançada pelo seu clique. O último passo agradece e libera o placar pessoal de cada um |
 | Encerrado | A tela de fechamento, fixa |
 
 ### 3.3 Painel de controle (só você, em outra tela)
@@ -129,6 +132,18 @@ Cada passo avança no seu clique.
 4. **O A/B do relâmpago** — *"quem teve 10 segundos acertou X%. Quem teve tempo
    acertou Y%. Vocês são as mesmas pessoas."*
 5. **Fechamento** — "confiar é ótimo, conferir é obrigatório".
+
+### 3.7 Histórico de sessões
+
+`historico.html`, protegida pela mesma chave. Lista as rodadas que tiveram
+participantes, da mais recente para a mais antiga, com o placar de cada uma; ao
+abrir uma sessão, mostra os mesmos agregados do telão — categorias, armadilhas
+e o A/B do relâmpago. O topo soma tudo: quantas sessões, quantas pessoas,
+percentual geral.
+
+Uma ressalva que a própria tela diz: **zerar uma rodada apaga o histórico
+dela**. Zerar existe para o ensaio; criar uma rodada nova preserva as
+anteriores.
 
 ### 3.6 Gestão de questões
 
@@ -397,6 +412,7 @@ questão, já que uma resposta recusada nunca entrava na lista de respondidas.
 | `POST /api/painel/debrief` | avança o passo do debrief |
 | `POST /api/painel/zerar` | limpa a rodada |
 | `GET /stream/painel` (SSE) | agregados completos |
+| `GET /api/painel/sessoes`, `GET /api/painel/sessoes/:id` | histórico de sessões |
 | `GET/POST /api/painel/questoes`, `PUT/DELETE /api/painel/questoes/:id` | gestão de questões |
 | `GET /api/painel/questoes.csv`, `POST /api/painel/questoes/importar` | exportar e importar CSV |
 

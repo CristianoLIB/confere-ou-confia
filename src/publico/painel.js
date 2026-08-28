@@ -52,6 +52,11 @@ function desenhar (ag) {
   $('encerrar').disabled = ag.fase === 'encerrado'
   $('voltar').disabled = !revelado || indice === 0
   $('avancar').disabled = !revelado || indice >= passos.length - 1
+  // O host precisa saber que o placar pessoal ainda está represado.
+  $('gateTexto').textContent = ag.resultadoLiberado
+    ? 'resultado individual liberado nas telas dos participantes'
+    : (revelado ? 'placar pessoal represado — libera no último passo' : 'placar pessoal represado')
+  $('gateTexto').style.color = ag.resultadoLiberado ? 'var(--laranja)' : 'var(--lilas)'
 }
 
 $('previsao').addEventListener('input', atualizarPrevisao)
@@ -87,6 +92,7 @@ $('zerar').addEventListener('click', () => {
 
 $('linkTelao').href = comChave('/telao.html')
 $('linkQuestoes').href = comChave('/questoes.html')
+$('linkHistorico').href = comChave('/historico.html')
 atualizarPrevisao()
 
 const fonte = new EventSource(comChave('/stream/painel'))

@@ -3,7 +3,8 @@ const tela = document.getElementById('tela')
 const marcador = document.getElementById('marcador')
 
 const estado = {
-  rodada: null, rotulo: '', fase: 'espera', segundosTrava: 4, segundosRelampago: 10,
+  rodada: null, rotulo: '', fase: 'espera', resultadoLiberado: false,
+  segundosTrava: 4, segundosRelampago: 10,
   questoes: [], respondidas: new Set(), enviando: false, preparado: false,
   mostradaEm: 0, cronometro: null, trava: null, resultado: null, reentrando: false
 }
@@ -41,7 +42,7 @@ async function entrar () {
   }
   const d = await r.json()
   Object.assign(estado, {
-    rodada: d.rodada, rotulo: d.rotulo, fase: d.fase,
+    rodada: d.rodada, rotulo: d.rotulo, fase: d.fase, resultadoLiberado: d.resultadoLiberado,
     segundosTrava: d.segundosTrava, segundosRelampago: d.segundosRelampago,
     questoes: d.questoes, respondidas: new Set(d.jaRespondidas),
     // Sessão nova: o que era da anterior não vale mais.
@@ -238,7 +239,19 @@ async function desenhar () {
     return
   }
 
-  if (estado.fase === 'revelado') {
+  if (estado.fase === 'revelado' && !estado.resultadoLiberado) {
+    marcador.textContent = 'Revelando'
+    tela.innerHTML = `
+      <div class="campo navy" style="flex:1; justify-content:flex-end">
+        <div class="etiq" style="color:var(--lilas)">Olhe para o telão</div>
+        <div class="disp disp-l" style="margin-top:14px">O resultado<br>da sala está<br><span style="color:var(--laranja)">saindo.</span></div>
+        <p style="font-size:16px; color:var(--lilas-claro); margin:22px 0 0; font-weight:500">O seu aparece aqui daqui a pouco.</p>
+      </div>
+      <div class="campo laranja etiq">aguarde o fim da apresentação</div>`
+    return
+  }
+
+  if (estado.fase === 'revelado' || estado.resultadoLiberado) {
     if (!estado.resultado) {
       const r = await fetch('/api/meu-resultado')
       if (SESSAO_PERDIDA.includes(r.status)) { reentrar(); return }
@@ -271,8 +284,9 @@ function ouvirEstado () {
     const d = JSON.parse(evento.data)
     // Rodada trocada: as questões em memória são de outra rodada. Reinscrever.
     if (estado.rodada !== null && d.rodada !== estado.rodada) { reentrar(); return }
-    const mudou = d.fase !== estado.fase
+    const mudou = d.fase !== estado.fase || d.resultadoLiberado !== estado.resultadoLiberado
     estado.fase = d.fase
+    estado.resultadoLiberado = d.resultadoLiberado
     estado.segundosRelampago = d.segundosRelampago
     estado.segundosTrava = d.segundosTrava
     // Só redesenha na virada de fase: no meio de uma questão, redesenhar

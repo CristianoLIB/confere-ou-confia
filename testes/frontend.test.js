@@ -35,8 +35,8 @@ test('nenhum módulo do servidor identifica ou bloqueia por IP', () => {
   }
 })
 
-test('as quatro telas existem e declaram a folha compartilhada', () => {
-  for (const arquivo of ['quiz.html', 'telao.html', 'painel.html', 'questoes.html']) {
+test('as cinco telas existem e declaram a folha compartilhada', () => {
+  for (const arquivo of ['quiz.html', 'telao.html', 'painel.html', 'questoes.html', 'historico.html']) {
     assert.match(ler(arquivo), /comum\.css/, `${arquivo} não carrega comum.css`)
   }
 })
@@ -204,4 +204,55 @@ test('a gestão de questões fala com as rotas certas e nunca embute a chave', (
 
 test('o painel leva à gestão de questões', () => {
   assert.match(ler('painel.js'), /questoes\.html/)
+})
+
+// ---------- gate da revelação ----------
+
+test('o participante espera o fim da apresentação para ver o placar pessoal', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /resultadoLiberado/, 'o cliente precisa respeitar o gate')
+  assert.match(fonte, /saindo|daqui a pouco/, 'e avisar que o resultado dele vem depois')
+})
+
+test('o painel mostra ao host se o placar pessoal ainda está represado', () => {
+  assert.match(ler('painel.js'), /resultadoLiberado/)
+  assert.match(ler('painel.html'), /gateTexto/)
+})
+
+// ---------- histórico ----------
+
+test('a página de histórico fala com as rotas de sessões', () => {
+  const fonte = ler('historico.js')
+  assert.match(fonte, /\/api\/painel\/sessoes/)
+  assert.ok(!/ADMIN_KEY|Nael/.test(fonte), 'a chave vem da URL')
+  assert.match(fonte, /zerar uma rodada apaga o histórico/, 'o risco precisa estar dito na tela')
+})
+
+test('o painel leva ao histórico', () => {
+  assert.match(ler('painel.js'), /historico\.html/)
+})
+
+// ---------- telão ----------
+
+test('o telão mostra o enunciado da armadilha em corpo grande', () => {
+  assert.match(ler('telao.js'), /t-enunciado/)
+  assert.match(ler('telao.css'), /\.t-enunciado[^}]*font-size/)
+})
+
+test('a tela do relâmpago se identifica e usa barras maiores', () => {
+  const fonte = ler('telao.js')
+  assert.match(fonte, /A pergunta relâmpago/)
+  assert.match(fonte, /'gorda'/)
+  assert.match(ler('telao.css'), /\.trilho\.gorda/)
+})
+
+test('o fechamento agradece', () => {
+  assert.match(ler('telao.js'), /Muito obrigado/)
+})
+
+test('a legenda do placar fica junto da porcentagem, no mesmo campo', () => {
+  const placar = ler('telao.js')
+  const tela = placar.slice(placar.indexOf('const telaPlacar'), placar.indexOf('const telaCategorias'))
+  const campoHeroi = tela.slice(tela.indexOf('t-heroi'), tela.indexOf('</div>', tela.indexOf('t-legenda-heroi')))
+  assert.match(campoHeroi, /t-legenda-heroi/, 'a frase precisa estar no mesmo campo da porcentagem')
 })

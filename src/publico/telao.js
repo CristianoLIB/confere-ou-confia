@@ -86,13 +86,14 @@ const telaRespondendo = ag => `
 const telaPlacar = ag => `
   <div class="campo laranja" style="grid-column:1/7; grid-row:2/8; justify-content:center">
     <div class="num t-heroi" id="heroi">0%</div>
+    <div class="disp t-legenda-heroi">de acerto na escolha<br>entre buscar e redigir</div>
   </div>
-  <div class="campo navy" style="grid-column:7/13; grid-row:2/5; justify-content:flex-end">
+  <div class="campo navy" style="grid-column:7/13; grid-row:2/6; justify-content:flex-end">
     <h1 class="disp t-titulo">O resultado<br>da sala</h1>
   </div>
-  <div class="campo branco" style="grid-column:7/13; grid-row:5/8; justify-content:space-between">
-    <div class="t-corpo">de acerto na escolha entre buscar e redigir</div>
-    <div class="etiq" style="color:var(--texto-claro)">${ag.placar.decisoes} decisões · ${ag.finalizados} pessoas</div>
+  <div class="campo branco" style="grid-column:7/13; grid-row:6/8; justify-content:center">
+    <div class="num t-numero-2">${ag.placar.decisoes}</div>
+    <div class="etiq" style="color:var(--texto-claro); margin-top:10px">decisões · ${ag.finalizados} pessoas</div>
   </div>`
 
 const telaCategorias = ag => `
@@ -119,11 +120,11 @@ function telaArmadilha (ag, indice) {
       <div class="etiq">n ${a.total} respostas</div>
     </div>
     <div class="campo navy" style="grid-column:6/13; grid-row:2/6; justify-content:space-between">
-      <p class="t-corpo">${escapar(a.texto)}</p>
+      <p class="t-enunciado">${escapar(a.texto)}</p>
       <div>${barra(fatias(a.acertos, a.total - a.acertos), 'solo')}<div style="height:14px"></div>${CHAVE()}</div>
     </div>
     <div class="campo branco" style="grid-column:6/13; grid-row:6/8; justify-content:space-between">
-      <div class="disp t-subtitulo">${veredito}</div>
+      <div class="disp t-faixa">${veredito}</div>
       <p class="t-corpo" style="color:var(--texto-claro)">${escapar(a.explicacao)}</p>
     </div>`
 }
@@ -131,15 +132,16 @@ function telaArmadilha (ag, indice) {
 const telaRelampago = ag => {
   const grupo = (nome, g, cor) => `
     <div>
-      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px">
         <div class="disp t-subtitulo" style="color:${cor}">${nome}</div>
-        <div class="num" style="font-size:clamp(30px,4.5vw,58px); color:${cor}">${g.percentual}%</div>
+        <div class="num t-pct-grupo" style="color:${cor}">${g.percentual}%</div>
       </div>
-      ${barra(fatias(g.acertos, g.total - g.acertos - g.expirados, g.expirados), 'solo')}
+      ${barra(fatias(g.acertos, g.total - g.acertos - g.expirados, g.expirados), 'gorda')}
     </div>`
   return `
-    <div class="campo branco" style="grid-column:1/13; grid-row:2/3; justify-content:center">
-      <h1 class="disp t-subtitulo">A mesma pergunta. Só mudou o cronômetro.</h1>
+    <div class="campo branco" style="grid-column:1/13; grid-row:2/3; flex-direction:row; align-items:center; justify-content:space-between; gap:20px">
+      <h1 class="disp t-subtitulo">A pergunta relâmpago</h1>
+      <span class="etiq" style="color:var(--texto-claro); text-align:right">a mesma pergunta · só mudou o cronômetro</span>
     </div>
     <div class="campo navy" style="grid-column:1/13; grid-row:3/7; justify-content:space-between">
       ${grupo('Com 10 segundos', ag.relampago.cronometro, 'var(--laranja)')}
@@ -147,19 +149,20 @@ const telaRelampago = ag => {
       ${CHAVE(true)}
     </div>
     <div class="campo laranja" style="grid-column:1/13; grid-row:7/8; justify-content:center">
-      <div class="disp t-subtitulo">Se veio com link, abra o link. São trinta segundos.</div>
+      <div class="disp t-faixa">Se veio com link, abra o link. São trinta segundos.</div>
     </div>`
 }
 
 const telaFechamento = () => `
-  <div class="campo navy" style="grid-column:1/7; grid-row:2/8; justify-content:flex-end">
+  <div class="campo navy" style="grid-column:1/7; grid-row:2/6; justify-content:flex-end">
     <div class="disp t-titulo">O Google<br>busca.<br><span style="color:var(--lilas)">A IA<br>redige.</span></div>
   </div>
-  <div class="campo branco" style="grid-column:7/13; grid-row:2/4; justify-content:center">
-    <div class="disp t-subtitulo">Confiar<br>é ótimo.</div>
+  <div class="campo laranja" style="grid-column:7/13; grid-row:2/6; justify-content:center">
+    <div class="disp t-titulo">Confiar é ótimo.<br>Conferir é<br>obrigatório.</div>
   </div>
-  <div class="campo laranja" style="grid-column:7/13; grid-row:4/8; justify-content:center">
-    <div class="disp t-titulo">Conferir é<br>obrigatório.</div>
+  <div class="campo branco" style="grid-column:1/13; grid-row:6/8; align-items:center; justify-content:center; text-align:center">
+    <div class="disp t-obrigado">Muito obrigado<br>a todos.</div>
+    <div class="etiq" style="color:var(--texto-claro); margin-top:12px">o resultado de cada um já está na tela dele</div>
   </div>`
 
 // Sobe o número em vez de estampá-lo: é o momento da revelação.

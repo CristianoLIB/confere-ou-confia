@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 import { abrirBanco } from './db.js'
 import { criarCanal, agendarComDebounce } from './sse.js'
-import { calcularAgregados } from './agregados.js'
+import { calcularAgregados, listarSessoes, resultadoLiberado, totalPassosDebrief } from './agregados.js'
 import { registrarResposta, resultadoPessoal } from './respostas.js'
 import * as questoes from './questoes.js'
 import {
@@ -25,12 +25,14 @@ const PING_MS = 25_000
 
 // O ÚNICO formato que trafega no canal do participante. Se algo for
 // acrescentado aqui, o teste de vazamento quebra — de propósito.
-export function payloadDoParticipante (rodada) {
+export function payloadDoParticipante (rodada, liberado = false) {
   return {
     // O id permite ao cliente perceber que a rodada trocou (host zerou ou
     // criou outra) e se reinscrever, em vez de insistir numa sessão órfã.
     rodada: rodada.id,
     fase: rodada.fase,
+    // Represado até o host chegar no fechamento do debrief.
+    resultadoLiberado: liberado,
     segundosRelampago: rodada.segundos_relampago,
     segundosTrava: rodada.segundos_trava
   }
@@ -66,7 +68,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
 
   const emitirParticipantes = () => {
     const rodada = rodadaAtual(db)
-    if (rodada) canais.participantes.publicar('estado', payloadDoParticipante(rodada))
+    if (rodada) canais.participantes.publicar('estado', payloadDoParticipante(rodada, resultadoLiberado(db, rodada)))
   }
   const emitirPainel = agendarComDebounce(() => {
     const rodada = rodadaAtual(db)
@@ -75,7 +77,9 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
 
   const estadoDoPainel = rodada => ({
     ...calcularAgregados(db, rodada.id),
-    entradasAbertas: Boolean(rodada.entradas_abertas)
+    entradasAbertas: Boolean(rodada.entradas_abertas),
+    totalPassos: totalPassosDebrief(db, rodada.id),
+    resultadoLiberado: resultadoLiberado(db, rodada)
   })
 
   const ping = setInterval(() => {
@@ -125,6 +129,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       rodada: rodada.id,
       rotulo: participante.rotulo,
       fase: rodada.fase,
+      resultadoLiberado: resultadoLiberado(db, rodada),
       segundosRelampago: rodada.segundos_relampago,
       segundosTrava: rodada.segundos_trava,
       questoes: questoesDoParticipante(db, participante.id),
@@ -163,8 +168,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     const rodada = exigirRodada(reply); if (!rodada) return
     const participante = participanteDoPedido(req, rodada)
     if (!participante) return reply.code(401).send({ erro: 'sem sessão' })
-    if (rodada.fase !== 'revelado') {
-      return reply.code(409).send({ erro: 'o resultado ainda não foi revelado' })
+    if (!resultadoLiberado(db, rodada)) {
+      return reply.code(409).send({ erro: 'o resultado ainda não foi liberado' })
     }
     return resultadoPessoal(db, participante.id)
   })
@@ -174,7 +179,7 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     canais.participantes.inscrever(reply.raw)
     const rodada = rodadaAtual(db)
     if (rodada) {
-      reply.raw.write(`event: estado\ndata: ${JSON.stringify(payloadDoParticipante(rodada))}\n\n`)
+      reply.raw.write(`event: estado\ndata: ${JSON.stringify(payloadDoParticipante(rodada, resultadoLiberado(db, rodada)))}\n\n`)
     }
   })
 
@@ -231,7 +236,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     if (!exigirChave(req, reply)) return
     const rodada = exigirRodada(reply); if (!rodada) return
     definirPassoDebrief(db, rodada.id, Number(req.body?.passo ?? 0))
-    emitirPainel()
+    // O último passo abre o resultado individual: os participantes precisam saber.
+    emitirParticipantes(); emitirPainel()
     return { ok: true }
   })
 
@@ -241,6 +247,28 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     zerarRodada(db, rodada.id)
     emitirParticipantes(); emitirPainel()
     return { ok: true }
+  })
+
+  // ---------- histórico de sessões ----------
+
+  app.get('/api/painel/sessoes', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    return listarSessoes(db)
+  })
+
+  app.get('/api/painel/sessoes/:id', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    const id = Number(req.params.id)
+    const rodada = db.prepare('SELECT * FROM rodada WHERE id = ?').get(id)
+    if (!rodada) return reply.code(404).send({ erro: 'sessão não encontrada' })
+    return {
+      ...calcularAgregados(db, id),
+      id: rodada.id,
+      criadaEm: rodada.criada_em,
+      previsaoParticipantes: rodada.previsao_participantes,
+      numQuestoesAtivas: rodada.num_questoes_ativas,
+      segundosTrava: rodada.segundos_trava
+    }
   })
 
   // ---------- gestão de questões ----------
