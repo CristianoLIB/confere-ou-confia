@@ -304,3 +304,33 @@ test('apagar questão também passa pelo gate de digitação', () => {
   assert.match(bloco, /digitar: selecionada/)
   assert.match(bloco, /perigo: true/)
 })
+
+// ---------- ritmo e chamada do relâmpago ----------
+
+test('a tela de preparação avança sozinha, sem depender do clique', () => {
+  const fonte = ler('quiz.js')
+  const bloco = fonte.slice(fonte.indexOf('function desenharPreparacao'), fonte.indexOf('function desenharResultado'))
+  assert.match(bloco, /Começa em/, 'precisa contar para o participante')
+  assert.match(bloco, /estado\.preparado = true/, 'e avançar sozinha')
+  assert.ok(!/id="pronto"|addEventListener\('click'/.test(bloco), 'não pode depender de um botão')
+})
+
+test('a chamada do relâmpago existe, é configurável e não come o cronômetro', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /function tocarChamada/)
+  assert.match(fonte, /'nenhuma'/, 'precisa poder ser desligada')
+  assert.match(fonte, /tocarChamada\(\)\.then\(entregar\)/,
+    'a entrega, que inicia o cronômetro, só acontece depois da animação')
+})
+
+test('a chamada respeita quem pediu menos movimento', () => {
+  assert.match(ler('comum.css'), /prefers-reduced-motion[\s\S]*?\.chamada/, 'precisa ter alternativa sem animação')
+})
+
+test('o painel ajusta o ritmo sem recriar a rodada', () => {
+  assert.match(ler('painel.html'), /Botões travados \(s\)/)
+  assert.match(ler('painel.html'), /Aviso do relâmpago \(s\)/)
+  assert.match(ler('painel.html'), /Chamada do relâmpago/)
+  assert.match(ler('painel.js'), /\/api\/painel\/ajustes/)
+  assert.match(ler('painel.html'), /não precisa recriar a rodada/)
+})

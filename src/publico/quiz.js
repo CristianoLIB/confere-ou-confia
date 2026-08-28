@@ -4,9 +4,9 @@ const marcador = document.getElementById('marcador')
 
 const estado = {
   rodada: null, rotulo: '', fase: 'espera', resultadoLiberado: false,
-  segundosTrava: 4, segundosRelampago: 10,
+  segundosTrava: 4, segundosRelampago: 10, segundosPreparacao: 5, animacaoRelampago: 'raio',
   questoes: [], respondidas: new Set(), enviando: false, preparado: false,
-  mostradaEm: 0, cronometro: null, trava: null, resultado: null, reentrando: false
+  mostradaEm: 0, cronometro: null, trava: null, preparo: null, resultado: null, reentrando: false
 }
 
 // 401: o participante sumiu do servidor (o host zerou a rodada ou criou outra).
@@ -44,6 +44,7 @@ async function entrar () {
   Object.assign(estado, {
     rodada: d.rodada, rotulo: d.rotulo, fase: d.fase, resultadoLiberado: d.resultadoLiberado,
     segundosTrava: d.segundosTrava, segundosRelampago: d.segundosRelampago,
+    segundosPreparacao: d.segundosPreparacao, animacaoRelampago: d.animacaoRelampago,
     questoes: d.questoes, respondidas: new Set(d.jaRespondidas),
     // Sessão nova: o que era da anterior não vale mais.
     preparado: false, resultado: null
@@ -68,6 +69,23 @@ const pendente = () => estado.questoes.find(q => !estado.respondidas.has(q.id))
 function pararTemporizadores () {
   if (estado.cronometro) { clearInterval(estado.cronometro); estado.cronometro = null }
   if (estado.trava) { clearInterval(estado.trava); estado.trava = null }
+  if (estado.preparo) { clearInterval(estado.preparo); estado.preparo = null }
+}
+
+const RAIO_SVG = '<svg viewBox="0 0 24 24" fill="#1d1846" aria-hidden="true"><path d="M13.5 1L4 14h6.2L9.4 23 20 9.6h-6.9L13.5 1z"/></svg>'
+
+// Anuncia o relâmpago cobrindo a tela por um instante. Resolve quando some,
+// e só então a pergunta aparece — a animação não pode comer o cronômetro.
+function tocarChamada () {
+  const modo = estado.animacaoRelampago
+  if (modo === 'nenhuma') return Promise.resolve()
+  const capa = document.createElement('div')
+  capa.className = `chamada ${modo}`
+  capa.innerHTML = `<div class="clarao"></div>${RAIO_SVG}<div class="rotulo">Relâmpago</div>`
+  document.body.appendChild(capa)
+  return new Promise(resolve => {
+    setTimeout(() => { capa.remove(); resolve() }, 1250)
+  })
 }
 
 async function responder (questao, escolha) {
@@ -155,20 +173,28 @@ function desenharQuestao (questao) {
     b.addEventListener('click', () => responder(questao, b.dataset.escolha))
   }
 
-  // Carimba a entrega de TODA questão: é o que arma a trava no servidor,
-  // e no relâmpago é o que inicia o cronômetro.
-  enviarJson('/api/entregar', { questaoId: questao.id })
-    .then(r => { if (SESSAO_PERDIDA.includes(r.status)) reentrar() })
-    .catch(() => { /* rede caiu; o participante tenta de novo ao responder */ })
+  const entregar = () => {
+    // Carimba a entrega de TODA questão: é o que arma a trava no servidor,
+    // e no relâmpago é o que inicia o cronômetro.
+    enviarJson('/api/entregar', { questaoId: questao.id })
+      .then(r => { if (SESSAO_PERDIDA.includes(r.status)) reentrar() })
+      .catch(() => { /* rede caiu; o participante tenta de novo ao responder */ })
+    estado.mostradaEm = Date.now()
+    if (travado) armarTrava()
+    if (comTempo) iniciarCronometro(questao)
+  }
 
-  estado.mostradaEm = Date.now()
-  if (travado) armarTrava()
-  if (comTempo) iniciarCronometro(questao)
+  // No relâmpago a chamada vem primeiro; o cronômetro só começa depois dela.
+  if (questao.eRelampago) tocarChamada().then(entregar)
+  else entregar()
 }
 
+// Avança sozinha: depender do clique fazia cada um chegar ao relâmpago num
+// momento diferente, e a duração é ajustável no painel.
 function desenharPreparacao (relampago) {
   marcador.textContent = 'Prepare-se'
   const comCronometro = relampago.comCronometro
+  const total = Math.max(1, estado.segundosPreparacao)
   tela.innerHTML = `
     <div class="campo navy" style="flex:1; justify-content:flex-end">
       <div class="etiq" style="color:var(--lilas)">Última</div>
@@ -177,18 +203,28 @@ function desenharPreparacao (relampago) {
     ${comCronometro ? `
     <div class="campo laranja" style="flex-direction:row; align-items:center; gap:14px">
       ${RELOGIO}
-      <span class="disp disp-s">Esta tem ${estado.segundosRelampago} segundos.<br>Comece quando estiver pronto.</span>
+      <span class="disp disp-s">Esta tem ${estado.segundosRelampago} segundos<br>para responder.</span>
     </div>` : ''}
-    <div class="acoes"><div class="opcoes">
-      <button class="opcao" id="pronto">
-        <span class="topo">${RAIO}${seta('#ff8000')}</span>
-        <span class="texto"><span class="rotulo">Estou pronto</span><span class="nota">${comCronometro ? 'o cronômetro começa agora' : 'sem pressa'}</span></span>
-      </button>
-    </div></div>`
-  document.getElementById('pronto').addEventListener('click', () => {
-    estado.preparado = true
-    desenhar()
-  })
+    <div class="acoes">
+      <div class="aviso">
+        <span class="etiq" id="aviso">Começa em ${total}s</span>
+        <div class="trilha"><i id="linha" style="width:0"></i></div>
+      </div>
+    </div>`
+
+  const inicio = Date.now()
+  const passo = () => {
+    const falta = Math.max(0, total * 1000 - (Date.now() - inicio))
+    document.getElementById('linha').style.width = `${((total * 1000 - falta) / (total * 1000)) * 100}%`
+    document.getElementById('aviso').textContent = `Começa em ${Math.ceil(falta / 1000)}s`
+    if (falta === 0) {
+      pararTemporizadores()
+      estado.preparado = true
+      desenhar()
+    }
+  }
+  passo()
+  estado.preparo = setInterval(passo, 80)
 }
 
 function desenharResultado () {
@@ -274,7 +310,10 @@ async function desenhar () {
   }
 
   // A tela de preparação entra entre a quarta situação e o relâmpago.
-  if (questao.eRelampago && !estado.preparado) { desenharPreparacao(questao); return }
+  // Zero segundos no painel pula a tela e vai direto para a chamada.
+  if (questao.eRelampago && !estado.preparado && estado.segundosPreparacao > 0) {
+    desenharPreparacao(questao); return
+  }
   desenharQuestao(questao)
 }
 
@@ -289,6 +328,8 @@ function ouvirEstado () {
     estado.resultadoLiberado = d.resultadoLiberado
     estado.segundosRelampago = d.segundosRelampago
     estado.segundosTrava = d.segundosTrava
+    estado.segundosPreparacao = d.segundosPreparacao
+    estado.animacaoRelampago = d.animacaoRelampago
     // Só redesenha na virada de fase: no meio de uma questão, redesenhar
     // reiniciaria a trava e o cronômetro.
     if (mudou) desenhar()

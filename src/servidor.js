@@ -14,7 +14,7 @@ import { registrarResposta, resultadoPessoal } from './respostas.js'
 import * as questoes from './questoes.js'
 import {
   criarRodada, rodadaAtual, entrarParticipante, questoesDoParticipante,
-  marcarEntregue, definirFase, definirEntradas, definirPassoDebrief, zerarRodada
+  marcarEntregue, definirFase, definirEntradas, definirPassoDebrief, definirAjustes, zerarRodada
 } from './rodada.js'
 
 const PASTA_SRC = path.dirname(fileURLToPath(import.meta.url))
@@ -34,7 +34,9 @@ export function payloadDoParticipante (rodada, liberado = false) {
     // Represado até o host chegar no fechamento do debrief.
     resultadoLiberado: liberado,
     segundosRelampago: rodada.segundos_relampago,
-    segundosTrava: rodada.segundos_trava
+    segundosTrava: rodada.segundos_trava,
+    segundosPreparacao: rodada.segundos_preparacao,
+    animacaoRelampago: rodada.animacao_relampago
   }
 }
 
@@ -79,7 +81,13 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     ...calcularAgregados(db, rodada.id),
     entradasAbertas: Boolean(rodada.entradas_abertas),
     totalPassos: totalPassosDebrief(db, rodada.id),
-    resultadoLiberado: resultadoLiberado(db, rodada)
+    resultadoLiberado: resultadoLiberado(db, rodada),
+    ajustes: {
+      segundosTrava: rodada.segundos_trava,
+      segundosPreparacao: rodada.segundos_preparacao,
+      segundosRelampago: rodada.segundos_relampago,
+      animacaoRelampago: rodada.animacao_relampago
+    }
   })
 
   const ping = setInterval(() => {
@@ -132,6 +140,8 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       resultadoLiberado: resultadoLiberado(db, rodada),
       segundosRelampago: rodada.segundos_relampago,
       segundosTrava: rodada.segundos_trava,
+      segundosPreparacao: rodada.segundos_preparacao,
+      animacaoRelampago: rodada.animacao_relampago,
       questoes: questoesDoParticipante(db, participante.id),
       jaRespondidas
     }
@@ -198,13 +208,15 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
 
   app.post('/api/painel/rodada', (req, reply) => {
     if (!exigirChave(req, reply)) return
-    const { previsaoParticipantes, numQuestoesAtivas, segundosRelampago, segundosTrava } = req.body ?? {}
+    const { previsaoParticipantes, numQuestoesAtivas, segundosRelampago, segundosTrava,
+            segundosPreparacao, animacaoRelampago } = req.body ?? {}
     if (!Number.isInteger(previsaoParticipantes) || previsaoParticipantes < 1) {
       return reply.code(400).send({ erro: 'previsaoParticipantes deve ser inteiro positivo' })
     }
     let rodada
     try {
-      rodada = criarRodada(db, { previsaoParticipantes, numQuestoesAtivas, segundosRelampago, segundosTrava })
+      rodada = criarRodada(db, { previsaoParticipantes, numQuestoesAtivas, segundosRelampago,
+        segundosTrava, segundosPreparacao, animacaoRelampago })
     } catch (erro) {
       return reply.code(400).send({ erro: erro.message })
     }
@@ -230,6 +242,20 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     definirEntradas(db, rodada.id, Boolean(req.body?.abertas))
     emitirPainel()
     return { ok: true }
+  })
+
+  // Ritmo ajustável com a rodada em andamento: vale para a próxima questão.
+  app.post('/api/painel/ajustes', (req, reply) => {
+    if (!exigirChave(req, reply)) return
+    const rodada = exigirRodada(reply); if (!rodada) return
+    const nova = definirAjustes(db, rodada.id, req.body ?? {})
+    emitirParticipantes(); emitirPainel()
+    return {
+      segundosTrava: nova.segundos_trava,
+      segundosPreparacao: nova.segundos_preparacao,
+      segundosRelampago: nova.segundos_relampago,
+      animacaoRelampago: nova.animacao_relampago
+    }
   })
 
   app.post('/api/painel/debrief', (req, reply) => {

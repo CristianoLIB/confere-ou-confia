@@ -4,6 +4,22 @@ import {
 } from './distribuicao.js'
 
 const FASES = ['espera', 'respondendo', 'revelado', 'encerrado']
+export const ANIMACOES = ['raio', 'flash', 'nenhuma']
+
+// Limites dos ajustes de ritmo. Validados aqui porque valem para todo caminho:
+// criar rodada, ajustar ao vivo, ou semear em teste.
+const LIMITES = {
+  segundosTrava: [0, 15],
+  segundosPreparacao: [0, 30],
+  segundosRelampago: [3, 120]
+}
+
+function limitar (nome, valor, padrao) {
+  const n = Number(valor)
+  if (!Number.isFinite(n)) return padrao
+  const [min, max] = LIMITES[nome]
+  return Math.min(max, Math.max(min, Math.round(n)))
+}
 const QUESTOES_POR_PARTICIPANTE = 4
 
 export function criarRodada (db, {
@@ -11,8 +27,14 @@ export function criarRodada (db, {
   numQuestoesAtivas,
   segundosRelampago = 10,
   segundosTrava = 4,
+  segundosPreparacao = 5,
+  animacaoRelampago = 'raio',
   aleatorio = Math.random
 }) {
+  segundosRelampago = limitar('segundosRelampago', segundosRelampago, 10)
+  segundosTrava = limitar('segundosTrava', segundosTrava, 4)
+  segundosPreparacao = limitar('segundosPreparacao', segundosPreparacao, 5)
+  if (!ANIMACOES.includes(animacaoRelampago)) animacaoRelampago = 'raio'
   const k = numQuestoesAtivas ?? calcularQuestoesAtivas(previsaoParticipantes)
   const questoes = db.prepare('SELECT * FROM questao WHERE ativa = 1').all()
   const ativas = selecionarQuestoesAtivas(questoes, k, aleatorio)
@@ -22,9 +44,10 @@ export function criarRodada (db, {
   return db.transaction(() => {
     const info = db.prepare(`
       INSERT INTO rodada (criada_em, previsao_participantes, num_questoes_ativas,
-                          segundos_relampago, segundos_trava)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(new Date().toISOString(), previsaoParticipantes, k, segundosRelampago, segundosTrava)
+                          segundos_relampago, segundos_trava, segundos_preparacao, animacao_relampago)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(new Date().toISOString(), previsaoParticipantes, k, segundosRelampago,
+      segundosTrava, segundosPreparacao, animacaoRelampago)
     const inserir = db.prepare('INSERT INTO rodada_questao (rodada_id, questao_id) VALUES (?, ?)')
     for (const q of [...ativas, relampago]) inserir.run(info.lastInsertRowid, q.id)
     return db.prepare('SELECT * FROM rodada WHERE id = ?').get(info.lastInsertRowid)
@@ -120,6 +143,29 @@ export function definirFase (db, rodadaId, fase) {
 
 export function definirEntradas (db, rodadaId, abertas) {
   db.prepare('UPDATE rodada SET entradas_abertas = ? WHERE id = ?').run(abertas ? 1 : 0, rodadaId)
+}
+
+// Ajusta o ritmo da rodada em andamento, sem precisar criar outra.
+export function definirAjustes (db, rodadaId, ajustes = {}) {
+  const atual = db.prepare('SELECT * FROM rodada WHERE id = ?').get(rodadaId)
+  if (!atual) throw new Error('rodada inexistente')
+
+  const novo = {
+    segundos_trava: 'segundosTrava' in ajustes
+      ? limitar('segundosTrava', ajustes.segundosTrava, atual.segundos_trava) : atual.segundos_trava,
+    segundos_preparacao: 'segundosPreparacao' in ajustes
+      ? limitar('segundosPreparacao', ajustes.segundosPreparacao, atual.segundos_preparacao) : atual.segundos_preparacao,
+    segundos_relampago: 'segundosRelampago' in ajustes
+      ? limitar('segundosRelampago', ajustes.segundosRelampago, atual.segundos_relampago) : atual.segundos_relampago,
+    animacao_relampago: ANIMACOES.includes(ajustes.animacaoRelampago)
+      ? ajustes.animacaoRelampago : atual.animacao_relampago
+  }
+  db.prepare(`
+    UPDATE rodada SET segundos_trava = @segundos_trava, segundos_preparacao = @segundos_preparacao,
+                      segundos_relampago = @segundos_relampago, animacao_relampago = @animacao_relampago
+    WHERE id = ${rodadaId}
+  `).run(novo)
+  return db.prepare('SELECT * FROM rodada WHERE id = ?').get(rodadaId)
 }
 
 export function definirPassoDebrief (db, rodadaId, passo) {

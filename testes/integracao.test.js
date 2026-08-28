@@ -57,11 +57,13 @@ test('VAZAMENTO: a resposta de entrar não contém gabarito nem explicação', a
 
 test('VAZAMENTO: o payload do canal do participante só carrega fase e cronômetro', () => {
   const payload = payloadDoParticipante({
-    id: 7, fase: 'respondendo', segundos_relampago: 10, segundos_trava: 4, passo_debrief: 3,
+    id: 7, fase: 'respondendo', segundos_relampago: 10, segundos_trava: 4,
+    segundos_preparacao: 5, animacao_relampago: 'raio', passo_debrief: 3,
     previsao_participantes: 45, num_questoes_ativas: 10
   })
   assert.deepEqual(Object.keys(payload).sort(),
-    ['fase', 'resultadoLiberado', 'rodada', 'segundosRelampago', 'segundosTrava'])
+    ['animacaoRelampago', 'fase', 'resultadoLiberado', 'rodada',
+     'segundosPreparacao', 'segundosRelampago', 'segundosTrava'])
   assert.equal(payload.rodada, 7, 'o cliente precisa perceber quando a rodada trocou')
   assert.equal(payload.resultadoLiberado, false, 'o gate vem fechado por padrão')
 })
@@ -524,4 +526,62 @@ test('ZERAR apaga só a sessão atual: as anteriores continuam no histórico', a
   assert.ok(!sessoes.some(x => x.id === nova), 'a sessão zerada sai do histórico')
   assert.equal(db.prepare('SELECT COUNT(*) c FROM rodada').get().c, 2, 'nenhuma rodada é removida')
   assert.equal(db.prepare('SELECT COUNT(*) c FROM questao').get().c, questoesAntes, 'o banco de questões não é tocado')
+})
+
+// ---------- ritmo ajustável ----------
+
+test('os ajustes exigem a chave', async () => {
+  const { app: a } = montarApp()
+  assert.equal((await a.inject({ method: 'POST', url: '/api/painel/ajustes', payload: {} })).statusCode, 401)
+})
+
+test('AJUSTES: mudam a rodada em andamento e chegam ao participante', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const antes = await entrar(a)
+  assert.equal(antes.corpo.segundosPreparacao, 5)
+  assert.equal(antes.corpo.animacaoRelampago, 'raio')
+
+  const r = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
+    payload: { segundosTrava: 6, segundosPreparacao: 8, segundosRelampago: 15, animacaoRelampago: 'flash' } })
+  assert.equal(r.statusCode, 200)
+  assert.deepEqual(r.json(), { segundosTrava: 6, segundosPreparacao: 8, segundosRelampago: 15, animacaoRelampago: 'flash' })
+
+  // Sem criar rodada nova: o mesmo participante já recebe o novo ritmo.
+  const depois = await entrar(a, `pt=${antes.cookie.value}`)
+  assert.equal(depois.corpo.rodada, rodada.id, 'é a mesma rodada')
+  assert.equal(depois.corpo.segundosTrava, 6)
+  assert.equal(depois.corpo.segundosPreparacao, 8)
+  assert.equal(depois.corpo.animacaoRelampago, 'flash')
+})
+
+test('AJUSTES: o servidor limita os valores e ignora animação inválida', async () => {
+  const { app: a } = montarApp()
+  const r = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
+    payload: { segundosTrava: 999, segundosPreparacao: -5, segundosRelampago: 1, animacaoRelampago: 'discoteca' } })
+  assert.deepEqual(r.json(), { segundosTrava: 15, segundosPreparacao: 0, segundosRelampago: 3, animacaoRelampago: 'raio' })
+})
+
+test('AJUSTES: mexer num campo não altera os outros', async () => {
+  const { app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
+    payload: { segundosTrava: 7, animacaoRelampago: 'nenhuma' } })
+  const so = await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'), payload: { segundosPreparacao: 3 } })
+  assert.deepEqual(so.json(), { segundosTrava: 7, segundosPreparacao: 3, segundosRelampago: 10, animacaoRelampago: 'nenhuma' })
+})
+
+test('AJUSTES: o painel mostra o ritmo em uso', async () => {
+  const { app: a } = montarApp()
+  const estado = (await a.inject({ url: comChave('/api/painel/estado') })).json()
+  assert.deepEqual(Object.keys(estado.ajustes).sort(),
+    ['animacaoRelampago', 'segundosPreparacao', 'segundosRelampago', 'segundosTrava'])
+})
+
+test('criar rodada aceita o ritmo e a animação', async () => {
+  const { db, app: a } = montarApp()
+  await a.inject({ method: 'POST', url: comChave('/api/painel/rodada'),
+    payload: { previsaoParticipantes: 30, segundosPreparacao: 9, animacaoRelampago: 'flash' } })
+  const r = db.prepare('SELECT * FROM rodada ORDER BY id DESC LIMIT 1').get()
+  assert.equal(r.segundos_preparacao, 9)
+  assert.equal(r.animacao_relampago, 'flash')
 })

@@ -199,3 +199,51 @@ dialog#modal .modal-gate input { width: 100%; font-size: 17px; }
 dialog#modal .modal-gate strong { color: var(--laranja); letter-spacing: .1em; }
 dialog#modal .modal-acoes { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
 dialog#modal .modal-acoes .acao { font-size: 14px; padding: 13px 18px; }
+
+/* Chamada do relâmpago: cobre a tela por um instante antes da pergunta.
+   Ligada, desligada ou trocada no painel. */
+.chamada {
+  position: fixed; inset: 0; z-index: 90; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--navy-escuro);
+  animation: chamada-sai .5s ease-in 700ms forwards;
+}
+.chamada .clarao { position: absolute; inset: 0; background: var(--laranja); animation: clarao 700ms steps(1) forwards; }
+.chamada svg { width: min(52vw, 240px); height: auto; position: relative; z-index: 1;
+               animation: raio-entra 620ms cubic-bezier(.2, .9, .2, 1) forwards; }
+.chamada .rotulo {
+  position: absolute; bottom: 16vh; z-index: 1;
+  font-family: var(--display); font-variation-settings: 'wdth' 116, 'wght' 800;
+  text-transform: uppercase; font-size: clamp(22px, 7vw, 42px); color: var(--navy-escuro);
+  animation: rotulo-entra 500ms 120ms both;
+}
+@keyframes clarao {
+  0%   { opacity: 1; }
+  14%  { opacity: 0; }
+  22%  { opacity: 1; }
+  34%  { opacity: 0; }
+  46%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+@keyframes raio-entra {
+  0%   { transform: scale(.3) rotate(-14deg); opacity: 0; }
+  45%  { transform: scale(1.16) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes rotulo-entra {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@keyframes chamada-sai { to { opacity: 0; visibility: hidden; } }
+
+/* Só o clarão, sem o raio. */
+.chamada.flash svg { display: none; }
+.chamada.flash .rotulo { color: var(--navy-escuro); }
+
+/* Quem pediu menos movimento recebe o aviso, não a animação. */
+@media (prefers-reduced-motion: reduce) {
+  .chamada, .chamada .clarao, .chamada svg, .chamada .rotulo { animation: none; }
+  .chamada { background: var(--laranja); opacity: 1; }
+  .chamada svg { display: none; }
+  .chamada .rotulo { position: static; }
+}

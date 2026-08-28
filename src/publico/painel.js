@@ -38,8 +38,26 @@ const NOME_DO_PASSO = {
   armadilha: 'Armadilha', relampago: 'Relâmpago', fechamento: 'Fechamento'
 }
 
+// Enquanto o host não mexe nos campos, eles espelham a rodada.
+let ajustesTocados = false
+for (const id of ['trava', 'preparacao', 'segundos', 'animacao']) {
+  document.getElementById(id).addEventListener('input', () => {
+    ajustesTocados = true
+    $('ajustesTexto').textContent = 'alterado — clique em Aplicar'
+    $('ajustesTexto').style.color = 'var(--lilas-claro)'
+  })
+}
+
 function desenhar (ag) {
+  const primeiro = atual === null
   atual = ag
+  if (ag.ajustes && (primeiro || !ajustesTocados)) {
+    $('trava').value = ag.ajustes.segundosTrava
+    $('preparacao').value = ag.ajustes.segundosPreparacao
+    $('segundos').value = ag.ajustes.segundosRelampago
+    $('animacao').value = ag.ajustes.animacaoRelampago
+    if (primeiro) $('ajustesTexto').textContent = 'em uso nesta rodada'
+  }
   $('nConectados').textContent = ag.conectados
   $('nRespondendo').textContent = ag.respondendo
   $('nFinalizados').textContent = ag.finalizados
@@ -79,7 +97,9 @@ $('criar').addEventListener('click', async () => {
   const r = await enviar('/api/painel/rodada', {
     previsaoParticipantes: Number($('previsao').value),
     segundosRelampago: Number($('segundos').value),
-    segundosTrava: Number($('trava').value)
+    segundosTrava: Number($('trava').value),
+    segundosPreparacao: Number($('preparacao').value),
+    animacaoRelampago: $('animacao').value
   })
   if (r.ok) await avisar({ titulo: 'Rodada criada', texto: `${(await r.json()).numQuestoesAtivas} questões em jogo.` })
 })
@@ -101,6 +121,25 @@ $('arquivar').addEventListener('click', async () => {
       titulo: 'Sessão arquivada',
       texto: `A sessão #${d.arquivada} está no histórico. A nova tem ${d.numQuestoesAtivas} questões.`
     })
+  }
+})
+
+$('salvarAjustes').addEventListener('click', async () => {
+  const r = await enviar('/api/painel/ajustes', {
+    segundosTrava: Number($('trava').value),
+    segundosPreparacao: Number($('preparacao').value),
+    segundosRelampago: Number($('segundos').value),
+    animacaoRelampago: $('animacao').value
+  })
+  if (r.ok) {
+    const d = await r.json()
+    // O servidor limita os valores: mostra o que de fato ficou valendo.
+    $('trava').value = d.segundosTrava
+    $('preparacao').value = d.segundosPreparacao
+    $('segundos').value = d.segundosRelampago
+    $('animacao').value = d.animacaoRelampago
+    $('ajustesTexto').textContent = 'aplicado — vale na próxima questão de cada um'
+    $('ajustesTexto').style.color = 'var(--laranja)'
   }
 })
 
