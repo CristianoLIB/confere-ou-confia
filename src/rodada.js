@@ -36,7 +36,6 @@ function arrumarTitulo (valor, padrao) {
 // criar rodada, ajustar ao vivo, ou semear em teste.
 const LIMITES = {
   segundosTrava: [0, 15],
-  segundosPreparacao: [0, 30],
   segundosRelampago: [3, 120]
 }
 
@@ -53,7 +52,6 @@ export function criarRodada (db, {
   numQuestoesAtivas,
   segundosRelampago = 10,
   segundosTrava = 4,
-  segundosPreparacao = 5,
   animacaoRelampago = 'raio',
   titulo = TITULO_PADRAO,
   atalho = ATALHO_PADRAO,
@@ -63,7 +61,6 @@ export function criarRodada (db, {
   atalho = arrumarAtalho(atalho)
   segundosRelampago = limitar('segundosRelampago', segundosRelampago, 10)
   segundosTrava = limitar('segundosTrava', segundosTrava, 4)
-  segundosPreparacao = limitar('segundosPreparacao', segundosPreparacao, 5)
   if (!ANIMACOES.includes(animacaoRelampago)) animacaoRelampago = 'raio'
   const k = numQuestoesAtivas ?? calcularQuestoesAtivas(previsaoParticipantes)
   const questoes = db.prepare('SELECT * FROM questao WHERE ativa = 1').all()
@@ -74,11 +71,11 @@ export function criarRodada (db, {
   return db.transaction(() => {
     const info = db.prepare(`
       INSERT INTO rodada (criada_em, previsao_participantes, num_questoes_ativas,
-                          segundos_relampago, segundos_trava, segundos_preparacao,
+                          segundos_relampago, segundos_trava,
                           animacao_relampago, titulo, atalho)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(new Date().toISOString(), previsaoParticipantes, k, segundosRelampago,
-      segundosTrava, segundosPreparacao, animacaoRelampago, titulo, atalho)
+      segundosTrava, animacaoRelampago, titulo, atalho)
     const inserir = db.prepare('INSERT INTO rodada_questao (rodada_id, questao_id) VALUES (?, ?)')
     for (const q of [...ativas, relampago]) inserir.run(info.lastInsertRowid, q.id)
     return db.prepare('SELECT * FROM rodada WHERE id = ?').get(info.lastInsertRowid)
@@ -195,8 +192,6 @@ export function definirAjustes (db, rodadaId, ajustes = {}) {
   const novo = {
     segundos_trava: 'segundosTrava' in ajustes
       ? limitar('segundosTrava', ajustes.segundosTrava, atual.segundos_trava) : atual.segundos_trava,
-    segundos_preparacao: 'segundosPreparacao' in ajustes
-      ? limitar('segundosPreparacao', ajustes.segundosPreparacao, atual.segundos_preparacao) : atual.segundos_preparacao,
     segundos_relampago: 'segundosRelampago' in ajustes
       ? limitar('segundosRelampago', ajustes.segundosRelampago, atual.segundos_relampago) : atual.segundos_relampago,
     animacao_relampago: ANIMACOES.includes(ajustes.animacaoRelampago)
@@ -205,7 +200,7 @@ export function definirAjustes (db, rodadaId, ajustes = {}) {
     atalho: 'atalho' in ajustes ? arrumarAtalho(ajustes.atalho, atual.atalho) : atual.atalho
   }
   db.prepare(`
-    UPDATE rodada SET segundos_trava = @segundos_trava, segundos_preparacao = @segundos_preparacao,
+    UPDATE rodada SET segundos_trava = @segundos_trava,
                       segundos_relampago = @segundos_relampago, animacao_relampago = @animacao_relampago,
                       titulo = @titulo, atalho = @atalho
     WHERE id = ${rodadaId}

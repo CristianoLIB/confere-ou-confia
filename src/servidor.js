@@ -41,7 +41,6 @@ export function payloadDoParticipante (rodada, liberado = false) {
     resultadoLiberado: liberado,
     segundosRelampago: rodada.segundos_relampago,
     segundosTrava: rodada.segundos_trava,
-    segundosPreparacao: rodada.segundos_preparacao,
     animacaoRelampago: rodada.animacao_relampago,
     titulo: rodada.titulo,
     atalho: rodada.atalho
@@ -114,7 +113,6 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     resultadoLiberado: resultadoLiberado(db, rodada),
     ajustes: {
       segundosTrava: rodada.segundos_trava,
-      segundosPreparacao: rodada.segundos_preparacao,
       segundosRelampago: rodada.segundos_relampago,
       animacaoRelampago: rodada.animacao_relampago,
       titulo: rodada.titulo,
@@ -179,7 +177,6 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       resultadoLiberado: resultadoLiberado(db, rodada),
       segundosRelampago: rodada.segundos_relampago,
       segundosTrava: rodada.segundos_trava,
-      segundosPreparacao: rodada.segundos_preparacao,
       animacaoRelampago: rodada.animacao_relampago,
       titulo: rodada.titulo,
       questoes: questoesDoParticipante(db, participante.id),
@@ -250,14 +247,14 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
   app.post('/api/painel/rodada', (req, reply) => {
     if (!exigirChave(req, reply)) return
     const { previsaoParticipantes, numQuestoesAtivas, segundosRelampago, segundosTrava,
-            segundosPreparacao, animacaoRelampago, titulo, atalho } = req.body ?? {}
+            animacaoRelampago, titulo, atalho } = req.body ?? {}
     if (!Number.isInteger(previsaoParticipantes) || previsaoParticipantes < 1) {
       return reply.code(400).send({ erro: 'previsaoParticipantes deve ser inteiro positivo' })
     }
     let rodada
     try {
       rodada = criarRodada(db, { previsaoParticipantes, numQuestoesAtivas, segundosRelampago,
-        segundosTrava, segundosPreparacao, animacaoRelampago, titulo, atalho })
+        segundosTrava, animacaoRelampago, titulo, atalho })
     } catch (erro) {
       return reply.code(400).send({ erro: erro.message })
     }
@@ -302,7 +299,6 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
     emitirParticipantes(); emitirPainel()
     return {
       segundosTrava: nova.segundos_trava,
-      segundosPreparacao: nova.segundos_preparacao,
       segundosRelampago: nova.segundos_relampago,
       animacaoRelampago: nova.animacao_relampago,
       titulo: nova.titulo,
@@ -330,7 +326,6 @@ export function criarServidor (db, { adminKey = process.env.ADMIN_KEY, logger = 
       numQuestoesAtivas: atual.num_questoes_ativas,
       segundosRelampago: atual.segundos_relampago,
       segundosTrava: atual.segundos_trava,
-      segundosPreparacao: atual.segundos_preparacao,
       animacaoRelampago: atual.animacao_relampago,
       titulo: atual.titulo,
       atalho: atual.atalho

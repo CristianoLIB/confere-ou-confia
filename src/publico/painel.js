@@ -45,7 +45,7 @@ const NOME_DO_PASSO = {
 
 // Enquanto o host não mexe nos campos, eles espelham a rodada.
 let ajustesTocados = false
-for (const id of ['titulo', 'atalho', 'trava', 'preparacao', 'segundos', 'animacao']) {
+for (const id of ['titulo', 'atalho', 'trava', 'segundos', 'animacao']) {
   document.getElementById(id).addEventListener('input', () => {
     ajustesTocados = true
     $('ajustesTexto').textContent = 'alterado — clique em Aplicar'
@@ -58,7 +58,6 @@ function desenhar (ag) {
   atual = ag
   if (ag.ajustes && (primeiro || !ajustesTocados)) {
     $('trava').value = ag.ajustes.segundosTrava
-    $('preparacao').value = ag.ajustes.segundosPreparacao
     $('segundos').value = ag.ajustes.segundosRelampago
     $('animacao').value = ag.ajustes.animacaoRelampago
     $('titulo').value = ag.ajustes.titulo
@@ -115,7 +114,6 @@ $('criar').addEventListener('click', async () => {
     previsaoParticipantes: Number($('previsao').value),
     segundosRelampago: Number($('segundos').value),
     segundosTrava: Number($('trava').value),
-    segundosPreparacao: Number($('preparacao').value),
     animacaoRelampago: $('animacao').value,
     titulo: $('titulo').value,
     atalho: $('atalho').value
@@ -146,7 +144,6 @@ $('arquivar').addEventListener('click', async () => {
 $('salvarAjustes').addEventListener('click', async () => {
   const r = await enviar('/api/painel/ajustes', {
     segundosTrava: Number($('trava').value),
-    segundosPreparacao: Number($('preparacao').value),
     segundosRelampago: Number($('segundos').value),
     animacaoRelampago: $('animacao').value,
     titulo: $('titulo').value,
@@ -156,7 +153,6 @@ $('salvarAjustes').addEventListener('click', async () => {
     const d = await r.json()
     // O servidor limita os valores: mostra o que de fato ficou valendo.
     $('trava').value = d.segundosTrava
-    $('preparacao').value = d.segundosPreparacao
     $('segundos').value = d.segundosRelampago
     $('animacao').value = d.animacaoRelampago
     $('titulo').value = d.titulo

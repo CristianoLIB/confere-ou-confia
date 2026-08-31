@@ -186,11 +186,12 @@ test('o aviso da trava fala com o participante a cada questão', () => {
   assert.match(ler('quiz.js'), /liberam em/, 'o participante precisa saber por que os botões estão mortos')
 })
 
-test('só o grupo do cronômetro lê o aviso dos 10 segundos', () => {
+test('nada avisa que a relâmpago vem: a chamada é a única transição', () => {
   const fonte = ler('quiz.js')
-  const preparacao = fonte.slice(fonte.indexOf('function desenharPreparacao'))
-  assert.match(preparacao, /comCronometro/,
-    'a tela de preparação precisa ramificar por grupo — o aviso de tempo é o próprio tratamento do A/B')
+  assert.ok(!/desenharPreparacao/.test(fonte), 'a tela de aviso saiu')
+  assert.ok(!/Mais<br>uma|e acabou/.test(fonte))
+  // Sem aviso, a única diferença entre os grupos passa a ser o cronômetro.
+  assert.match(fonte, /tocarChamada\(\)\.then\(entregar\)/)
 })
 
 // ---------- telão ----------
@@ -410,12 +411,11 @@ test('apagar questão também passa pelo gate de digitação', () => {
 
 // ---------- ritmo e chamada do relâmpago ----------
 
-test('a tela de preparação avança sozinha, sem depender do clique', () => {
+test('a quarta situação leva direto à chamada, sem tela intermediária', () => {
   const fonte = ler('quiz.js')
-  const bloco = fonte.slice(fonte.indexOf('function desenharPreparacao'), fonte.indexOf('function desenharResultado'))
-  assert.match(bloco, /Começa em/, 'precisa contar para o participante')
-  assert.match(bloco, /estado\.preparado = true/, 'e avançar sozinha')
-  assert.ok(!/id="pronto"|addEventListener\('click'/.test(bloco), 'não pode depender de um botão')
+  assert.ok(!/estado\.preparado|segundosPreparacao/.test(fonte), 'nada sobrou da tela de preparação')
+  const desenhar = fonte.slice(fonte.indexOf('async function desenhar'), fonte.indexOf('function ouvirEstado'))
+  assert.match(desenhar, /A chamada é a única transição/)
 })
 
 test('a chamada anuncia a pergunta relâmpago por escrito', () => {
@@ -436,8 +436,8 @@ test('a chamada respeita quem pediu menos movimento', () => {
 
 test('o painel ajusta o ritmo sem recriar a rodada', () => {
   assert.match(ler('painel.html'), /Botões travados \(s\)/)
-  assert.match(ler('painel.html'), /Aviso do relâmpago \(s\)/)
   assert.match(ler('painel.html'), /Chamada do relâmpago/)
+  assert.ok(!/Aviso do relâmpago/.test(ler('painel.html')), 'a tela de aviso não existe mais')
   assert.match(ler('painel.js'), /\/api\/painel\/ajustes/)
   assert.match(ler('painel.html'), /não precisa recriar a rodada/)
 })

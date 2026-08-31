@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS ${nome} (
   titulo                 TEXT NOT NULL DEFAULT 'Confere ou Confia?',
   atalho                 TEXT NOT NULL DEFAULT 'rt',
   no_ar                  INTEGER NOT NULL DEFAULT 1,
-  segundos_preparacao    INTEGER NOT NULL DEFAULT 5,
+  segundos_preparacao    INTEGER NOT NULL DEFAULT 5,   -- sem uso: a tela de preparação saiu
   animacao_relampago     TEXT NOT NULL DEFAULT 'raio',
   passo_debrief          INTEGER NOT NULL DEFAULT 0
 );`

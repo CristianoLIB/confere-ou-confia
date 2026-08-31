@@ -6,10 +6,10 @@ const cabecaTitulo = document.getElementById('titulo')
 const estado = {
   noAr: true,
   rodada: null, rotulo: '', fase: 'espera', resultadoLiberado: false,
-  segundosTrava: 4, segundosRelampago: 10, segundosPreparacao: 5, animacaoRelampago: 'raio',
+  segundosTrava: 4, segundosRelampago: 10, animacaoRelampago: 'raio',
   titulo: 'RTQuiz',
-  questoes: [], respondidas: new Set(), enviando: false, preparado: false,
-  mostradaEm: 0, cronometro: null, trava: null, preparo: null, resultado: null, reentrando: false
+  questoes: [], respondidas: new Set(), enviando: false,
+  mostradaEm: 0, cronometro: null, trava: null, resultado: null, reentrando: false
 }
 
 // 401: o participante sumiu do servidor (o host zerou a rodada ou criou outra).
@@ -23,8 +23,6 @@ const LUPA = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke
 const CANETA = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#169194" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3z"></path><path d="M13.5 6.5l4 4"></path></svg>'
 const CHECK = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#29235c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>'
 const ELO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#29235c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>'
-const RAIO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z"></path></svg>'
-const RELOGIO = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>'
 const seta = cor => `<span class="marca" style="background: ${cor}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${cor === '#ff8000' ? '#1d1846' : '#ffffff'}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></span>`
 
 const botao = (valor, icone, cor, rotulo, nota, travado) => `
@@ -66,11 +64,11 @@ async function entrar () {
     noAr: true,
     rodada: d.rodada, rotulo: d.rotulo, fase: d.fase, resultadoLiberado: d.resultadoLiberado,
     segundosTrava: d.segundosTrava, segundosRelampago: d.segundosRelampago,
-    segundosPreparacao: d.segundosPreparacao, animacaoRelampago: d.animacaoRelampago,
+    animacaoRelampago: d.animacaoRelampago,
     titulo: d.titulo,
     questoes: d.questoes, respondidas: new Set(d.jaRespondidas),
     // Sessão nova: o que era da anterior não vale mais.
-    preparado: false, resultado: null
+    resultado: null
   })
   return true
 }
@@ -92,7 +90,6 @@ const pendente = () => estado.questoes.find(q => !estado.respondidas.has(q.id))
 function pararTemporizadores () {
   if (estado.cronometro) { clearInterval(estado.cronometro); estado.cronometro = null }
   if (estado.trava) { clearInterval(estado.trava); estado.trava = null }
-  if (estado.preparo) { clearInterval(estado.preparo); estado.preparo = null }
 }
 
 const RAIO_SVG = '<svg viewBox="0 0 24 24" fill="#1d1846" aria-hidden="true"><path d="M13.5 1L4 14h6.2L9.4 23 20 9.6h-6.9L13.5 1z"/></svg>'
@@ -216,44 +213,6 @@ function desenharQuestao (questao) {
   else entregar()
 }
 
-// Avança sozinha: depender do clique fazia cada um chegar ao relâmpago num
-// momento diferente, e a duração é ajustável no painel.
-function desenharPreparacao (relampago) {
-  marcador.textContent = 'Prepare-se'
-  const comCronometro = relampago.comCronometro
-  const total = Math.max(1, estado.segundosPreparacao)
-  tela.innerHTML = `
-    <div class="campo navy" style="flex:1; justify-content:flex-end">
-      <div class="etiq" style="color:var(--lilas)">Última</div>
-      <div class="disp disp-xl" style="margin-top:14px">Mais<br>uma,<br><span style="color:var(--laranja)">e acabou.</span></div>
-    </div>
-    ${comCronometro ? `
-    <div class="campo laranja" style="flex-direction:row; align-items:center; gap:14px">
-      ${RELOGIO}
-      <span class="disp disp-s">Esta tem ${estado.segundosRelampago} segundos<br>para responder.</span>
-    </div>` : ''}
-    <div class="acoes">
-      <div class="aviso">
-        <span class="etiq" id="aviso">Começa em ${total}s</span>
-        <div class="trilha"><i id="linha" style="width:0"></i></div>
-      </div>
-    </div>`
-
-  const inicio = Date.now()
-  const passo = () => {
-    const falta = Math.max(0, total * 1000 - (Date.now() - inicio))
-    document.getElementById('linha').style.width = `${((total * 1000 - falta) / (total * 1000)) * 100}%`
-    document.getElementById('aviso').textContent = `Começa em ${Math.ceil(falta / 1000)}s`
-    if (falta === 0) {
-      pararTemporizadores()
-      estado.preparado = true
-      desenhar()
-    }
-  }
-  passo()
-  estado.preparo = setInterval(passo, 80)
-}
-
 function desenharResultado () {
   marcador.textContent = 'Resultado'
   const r = estado.resultado
@@ -339,9 +298,8 @@ async function desenhar () {
   // Revelar é encerramento silencioso: o telão vai para o debrief, mas quem
   // ainda tem pergunta pela frente continua respondendo sem ser interrompido.
   if (questao && (estado.fase === 'respondendo' || estado.fase === 'revelado')) {
-    if (questao.eRelampago && !estado.preparado && estado.segundosPreparacao > 0) {
-      desenharPreparacao(questao); return
-    }
+    // A chamada é a única transição para o relâmpago: sem aviso antes,
+    // a surpresa é o próprio tratamento que o A/B mede.
     desenharQuestao(questao)
     return
   }
@@ -379,7 +337,6 @@ function ouvirEstado () {
     estado.resultadoLiberado = d.resultadoLiberado
     estado.segundosRelampago = d.segundosRelampago
     estado.segundosTrava = d.segundosTrava
-    estado.segundosPreparacao = d.segundosPreparacao
     estado.animacaoRelampago = d.animacaoRelampago
     estado.titulo = d.titulo
     // O cabeçalho pode acompanhar na hora: mexer nele não reinicia a trava
