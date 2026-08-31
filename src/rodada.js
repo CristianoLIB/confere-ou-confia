@@ -197,13 +197,14 @@ export function definirAjustes (db, rodadaId, ajustes = {}) {
     animacao_relampago: ANIMACOES.includes(ajustes.animacaoRelampago)
       ? ajustes.animacaoRelampago : atual.animacao_relampago,
     titulo: 'titulo' in ajustes ? arrumarTitulo(ajustes.titulo, atual.titulo) : atual.titulo,
-    atalho: 'atalho' in ajustes ? arrumarAtalho(ajustes.atalho, atual.atalho) : atual.atalho
+    atalho: 'atalho' in ajustes ? arrumarAtalho(ajustes.atalho, atual.atalho) : atual.atalho,
+    id: rodadaId
   }
   db.prepare(`
     UPDATE rodada SET segundos_trava = @segundos_trava,
                       segundos_relampago = @segundos_relampago, animacao_relampago = @animacao_relampago,
                       titulo = @titulo, atalho = @atalho
-    WHERE id = ${rodadaId}
+    WHERE id = @id
   `).run(novo)
   return db.prepare('SELECT * FROM rodada WHERE id = ?').get(rodadaId)
 }

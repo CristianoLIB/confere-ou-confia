@@ -106,3 +106,41 @@ test('migrar é idempotente', () => {
   migrar(db); migrar(db)
   assert.equal(db.prepare('SELECT COUNT(*) c FROM questao').get().c, 21)
 })
+
+test('migrar preserva as colunas acrescentadas depois, ao recriar a tabela', () => {
+  const db = new Database(':memory:')
+  db.pragma('foreign_keys = ON')
+  // Esquema antigo (três fases) já com colunas novas configuradas: é o caso em
+  // que uma lista fixa de colunas no INSERT apagaria o que o host ajustou.
+  db.exec(`
+    CREATE TABLE questao (id TEXT PRIMARY KEY, texto TEXT NOT NULL, categoria TEXT NOT NULL,
+      gabarito TEXT NOT NULL, explicacao TEXT NOT NULL, essencial INTEGER NOT NULL DEFAULT 0,
+      e_relampago INTEGER NOT NULL DEFAULT 0, ativa INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE rodada (id INTEGER PRIMARY KEY AUTOINCREMENT, criada_em TEXT NOT NULL,
+      previsao_participantes INTEGER NOT NULL, num_questoes_ativas INTEGER NOT NULL,
+      fase TEXT NOT NULL DEFAULT 'espera' CHECK (fase IN ('espera','respondendo','revelado')),
+      entradas_abertas INTEGER NOT NULL DEFAULT 1, segundos_relampago INTEGER NOT NULL DEFAULT 10,
+      segundos_trava INTEGER NOT NULL DEFAULT 4, passo_debrief INTEGER NOT NULL DEFAULT 0,
+      titulo TEXT NOT NULL DEFAULT 'x', atalho TEXT NOT NULL DEFAULT 'rt',
+      no_ar INTEGER NOT NULL DEFAULT 1, animacao_relampago TEXT NOT NULL DEFAULT 'raio');
+    INSERT INTO rodada (criada_em, previsao_participantes, num_questoes_ativas, segundos_relampago,
+                        titulo, atalho, no_ar, animacao_relampago)
+    VALUES ('x', 30, 8, 25, 'Buscar ou Redigir?', 'summit', 0, 'flash');
+  `)
+  migrar(db)
+  const r = db.prepare('SELECT * FROM rodada WHERE id = 1').get()
+  assert.equal(r.titulo, 'Buscar ou Redigir?', 'o título configurado não pode voltar ao padrão')
+  assert.equal(r.atalho, 'summit', 'o endereço curto impresso no telão pararia de funcionar')
+  assert.equal(r.no_ar, 0)
+  assert.equal(r.animacao_relampago, 'flash')
+  assert.equal(r.segundos_relampago, 25)
+  // E a fase nova passa a ser aceita.
+  db.prepare("UPDATE rodada SET fase = 'encerrado' WHERE id = 1").run()
+  assert.equal(db.prepare('SELECT fase FROM rodada').get().fase, 'encerrado')
+})
+
+test('o esquema não cria mais a coluna da tela de preparação', () => {
+  const db = abrirBanco(':memory:')
+  const colunas = db.prepare("PRAGMA table_info('rodada')").all().map(c => c.name)
+  assert.ok(!colunas.includes('segundos_preparacao'), 'a tela saiu; a coluna também')
+})

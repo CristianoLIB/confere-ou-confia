@@ -40,8 +40,8 @@ Restrições do contexto:
 | Ritmo | Cada um no seu ritmo | Sobre Zoom, lockstep quebra com atraso e queda de conexão. |
 | Resultado | **Segurado** até você revelar | Gera expectativa e impede vazamento pela tela compartilhada. |
 | Pergunta relâmpago | **A/B**: metade com 10s, metade sem cronômetro | Prova ao vivo a tese do script sobre pressa e conferência. |
-| Trava de armação | Botões mortos por **4s** (ajustável de 3 a 5) a cada situação nova | Sem ela, o clique por reflexo entra no placar como se fosse decisão. |
-| Antes do relâmpago | **Tela de preparação** para os dois grupos | Quem tem cronômetro chega avisado; o A/B mede pressa, não susto. |
+| Trava de armação | Botões mortos por **4s** (ajustável de 0 a 15) a cada situação nova | Sem ela, o clique por reflexo entra no placar como se fosse decisão. |
+| Antes do relâmpago | **Nada** — a quarta resposta leva direto à chamada | Um aviso criaria uma segunda variável entre os grupos, além do cronômetro. |
 | Identidade visual | Marca do LIB em composição de cartaz suíço | A tela é projetada para 50 pessoas; precisa de presença, não de interface. |
 | Hospedagem | VPS: Node + SQLite + Docker | Sem dependência de nuvem de terceiro no momento da apresentação. |
 
@@ -78,7 +78,8 @@ Restrições do contexto:
    grupo do cronômetro, que a próxima teria 10 segundos. Ela saiu: além de
    estragar a surpresa, criava **duas** variáveis entre os grupos — o aviso e o
    relógio. Sem ela, a única diferença é o cronômetro na tela, que é o que o
-   A/B quer medir.
+   A/B quer medir. A chamada assumiu também o papel de porta: bloqueia toque e
+   mantém os botões desabilitados até sair.
 6. **Todos** recebem a **pergunta relâmpago** — a mesma pergunta para o
    público inteiro. Só muda uma coisa: metade vê um cronômetro de 10s correndo,
    a outra metade não vê cronômetro nenhum. Ela usa outro eixo, o que dá nome à
@@ -464,15 +465,21 @@ na atribuição. Uma resposta que chegue **antes de `segundos_trava`** é recusa
 com o motivo `cedo_demais` e **não é gravada** — a pessoa continua na mesma
 questão e responde assim que a trava soltar.
 
-A trava vale para as **4 situações normais**. A questão relâmpago é isenta: a
-tela de preparação já obriga uma ação deliberada antes de começar, e descontar 4
-dos 10 segundos esvaziaria a pergunta.
+Toda questão exige o carimbo: sem `entregue_em` não há como medir nem a trava
+nem o cronômetro, e quem pulasse o `/api/entregar` responderia fora de qualquer
+regra de tempo.
+
+A **contagem** da trava, porém, vale só para as 4 situações normais. No
+relâmpago quem cuida do tempo é o cronômetro, e descontar 4 dos 10 segundos
+esvaziaria a pergunta. No lugar da trava, ali os botões nascem desabilitados
+enquanto a chamada cobre a tela — e a própria chamada bloqueia toque, porque os
+botões já estão montados por baixo dela.
 
 O cliente também mostra a contagem e mantém os botões desabilitados, mas quem
 decide é o servidor. Sem isso, bastaria desligar o JavaScript para responder
 instantaneamente.
 
-Padrão de 4 segundos, ajustável de 3 a 5 no painel.
+Padrão de 4 segundos, ajustável de 0 a 15 no painel.
 
 ### 6.9 Validação do cronômetro
 

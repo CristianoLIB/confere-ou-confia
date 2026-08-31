@@ -648,13 +648,26 @@ test('AJUSTES: o painel mostra o ritmo em uso', async () => {
     ['animacaoRelampago', 'atalho', 'segundosRelampago', 'segundosTrava', 'titulo'])
 })
 
-test('criar rodada aceita o ritmo e a animação', async () => {
+test('criar rodada carrega cada campo de ritmo até o banco', async () => {
   const { db, app: a } = montarApp()
   await a.inject({ method: 'POST', url: comChave('/api/painel/rodada'),
-    payload: { previsaoParticipantes: 30, segundosTrava: 6, animacaoRelampago: 'flash' } })
+    payload: { previsaoParticipantes: 30, segundosTrava: 6, segundosRelampago: 25, animacaoRelampago: 'flash' } })
   const r = db.prepare('SELECT * FROM rodada ORDER BY id DESC LIMIT 1').get()
   assert.equal(r.segundos_trava, 6)
+  // Sem esta linha, tirar segundosRelampago do destructure passaria despercebido.
+  assert.equal(r.segundos_relampago, 25)
   assert.equal(r.animacao_relampago, 'flash')
+})
+
+test('cada campo de ritmo chega ao participante: um undefined vira NaN no relógio', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  await a.inject({ method: 'POST', url: comChave('/api/painel/ajustes'),
+    payload: { segundosTrava: 6, segundosRelampago: 25, animacaoRelampago: 'flash' } })
+  const { corpo } = await entrar(a)
+  for (const [campo, valor] of [['segundosTrava', 6], ['segundosRelampago', 25], ['animacaoRelampago', 'flash']]) {
+    assert.equal(corpo[campo], valor, `${campo} não chegou ao participante`)
+  }
 })
 
 // ---------- título da dinâmica ----------
@@ -773,4 +786,19 @@ test('SEM QUIZ: a rodada nasce no ar', async () => {
   const { app: a } = montarApp()
   await a.inject({ method: 'POST', url: comChave('/api/painel/rodada'), payload: { previsaoParticipantes: 20 } })
   assert.equal((await a.inject({ url: comChave('/api/painel/estado') })).json().noAr, true)
+})
+
+// ---------- achados da revisão ----------
+
+test('a relâmpago exige carimbo de exibição: sem ele não há como medir os 10s', async () => {
+  const { db, rodada, app: a } = montarApp()
+  definirFase(db, rodada.id, 'respondendo')
+  const { corpo, cookie } = await entrar(a)
+  const rel = corpo.questoes.find(q => q.eRelampago)
+  // Pula o /api/entregar de propósito, como faria uma aba offline.
+  const r = await a.inject({ method: 'POST', url: '/api/responder',
+    headers: { cookie: `pt=${cookie.value}` }, payload: { questaoId: rel.id, escolha: 'confiro' } })
+  assert.equal(r.statusCode, 425)
+  assert.equal(r.json().motivo, 'cedo_demais', 'sem carimbo o cronômetro nunca expiraria para esta pessoa')
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM resposta').get().c, 0)
 })

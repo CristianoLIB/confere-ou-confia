@@ -191,7 +191,7 @@ test('nada avisa que a relâmpago vem: a chamada é a única transição', () =>
   assert.ok(!/desenharPreparacao/.test(fonte), 'a tela de aviso saiu')
   assert.ok(!/Mais<br>uma|e acabou/.test(fonte))
   // Sem aviso, a única diferença entre os grupos passa a ser o cronômetro.
-  assert.match(fonte, /tocarChamada\(\)\.then\(entregar\)/)
+  assert.match(fonte, /questao\.eRelampago\) \{\s*\n\s*tocarChamada\(\)/)
 })
 
 // ---------- telão ----------
@@ -426,7 +426,8 @@ test('a chamada do relâmpago existe, é configurável e não come o cronômetro
   const fonte = ler('quiz.js')
   assert.match(fonte, /function tocarChamada/)
   assert.match(fonte, /'nenhuma'/, 'precisa poder ser desligada')
-  assert.match(fonte, /tocarChamada\(\)\.then\(entregar\)/,
+  const depoisDaChamada = fonte.slice(fonte.indexOf('if (questao.eRelampago) {'))
+  assert.match(depoisDaChamada, /tocarChamada\(\)\.then\([\s\S]{0,200}entregar\(\)/,
     'a entrega, que inicia o cronômetro, só acontece depois da animação')
 })
 
@@ -515,4 +516,56 @@ test('o painel tem o interruptor do ar e explica o efeito', () => {
   assert.match(ler('painel.html'), /mesmo quem já participou/)
   assert.match(ler('painel.js'), /\/api\/painel\/no-ar/)
   assert.match(ler('painel.js'), /Tirar do ar/)
+})
+
+// ---------- achados da revisão: a chamada não pode aceitar cliques ----------
+
+test('a chamada bloqueia toque: os botões do relâmpago já estão vivos por baixo', () => {
+  const capa = ler('comum.css').match(/\.chamada \{[^}]*\}/)[0]
+  assert.ok(!/pointer-events:\s*none/.test(capa),
+    'um toque repetido logo após a quarta resposta responderia sem a pessoa ver a pergunta')
+})
+
+test('no relâmpago os botões nascem desabilitados até a chamada sair', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /const sobAChamada = questao\.eRelampago/)
+  assert.match(fonte, /for \(const b of tela\.querySelectorAll\('button\.opcao'\)\) b\.disabled = false/,
+    'e são liberados quando ela sai')
+  // A faixa de aviso é só das situações normais.
+  assert.match(fonte, /\$\{comTrava \? '<div class="aviso">/)
+})
+
+test('uma chamada que termina depois de a tela mudar não age sobre ela', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /estado\.geracao = \(estado\.geracao \?\? 0\) \+ 1/)
+  assert.match(fonte, /if \(estado\.geracao !== minhaGeracao\) return/)
+  // E os temporizadores não explodem se o elemento sumiu.
+  assert.match(fonte, /if \(!conta \|\| !faixa\) return/)
+})
+
+test('redesenhar a mesma questão não replica a chamada nem reinicia o cronômetro', () => {
+  const fonte = ler('quiz.js')
+  assert.match(fonte, /estado\.desenhada === jaNaTela\.id/,
+    'sem isso, revelar no meio do relâmpago reiniciava o relógio na tela enquanto o servidor contava do original')
+})
+
+// ---------- achados da revisão: cobertura do A/B ----------
+
+test('só o grupo do cronômetro vê o relógio na tela', () => {
+  const fonte = ler('quiz.js')
+  // Apagar esta condição daria o cronômetro a todo mundo e destruiria o
+  // experimento sem quebrar nenhum outro teste.
+  assert.match(fonte, /const comTempo = questao\.eRelampago && questao\.comCronometro/)
+  assert.match(fonte, /\$\{comTempo \? '<div class="campo branco" id="faixaTempo"/)
+  assert.match(fonte, /if \(comTempo\) iniciarCronometro\(questao\)/)
+})
+
+test('a chamada é a única transição — testado pela estrutura, não pelo comentário', () => {
+  const fonte = ler('quiz.js')
+  const desenhar = fonte.slice(fonte.indexOf('async function desenhar'), fonte.indexOf('function ouvirEstado'))
+  // Entre achar a questão e desenhá-la não pode existir outra tela pelo caminho.
+  const trecho = desenhar.slice(desenhar.indexOf('const questao = pendente()'))
+  assert.match(trecho, /desenharQuestao\(questao\)/)
+  assert.ok(!/desenhar[A-Z]\w*\(questao\)/.test(trecho.replace(/desenharQuestao\(questao\)/g, '')),
+    'nenhuma tela intermediária entre a quarta resposta e a pergunta relâmpago')
 })

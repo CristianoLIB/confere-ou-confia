@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS ${nome} (
   titulo                 TEXT NOT NULL DEFAULT 'Confere ou Confia?',
   atalho                 TEXT NOT NULL DEFAULT 'rt',
   no_ar                  INTEGER NOT NULL DEFAULT 1,
-  segundos_preparacao    INTEGER NOT NULL DEFAULT 5,   -- sem uso: a tela de preparação saiu
   animacao_relampago     TEXT NOT NULL DEFAULT 'raio',
   passo_debrief          INTEGER NOT NULL DEFAULT 0
 );`
@@ -117,9 +116,6 @@ export function migrar (db) {
   if (daRodada.length && !daRodada.includes('titulo')) {
     db.exec("ALTER TABLE rodada ADD COLUMN titulo TEXT NOT NULL DEFAULT 'Confere ou Confia?'")
   }
-  if (daRodada.length && !daRodada.includes('segundos_preparacao')) {
-    db.exec("ALTER TABLE rodada ADD COLUMN segundos_preparacao INTEGER NOT NULL DEFAULT 5")
-  }
   if (daRodada.length && !daRodada.includes('animacao_relampago')) {
     db.exec("ALTER TABLE rodada ADD COLUMN animacao_relampago TEXT NOT NULL DEFAULT 'raio'")
   }
@@ -132,11 +128,12 @@ export function migrar (db) {
     db.pragma('foreign_keys = OFF')
     db.transaction(() => {
       db.exec(DDL_RODADA('rodada_nova'))
-      db.exec(`
-        INSERT INTO rodada_nova (id, criada_em, previsao_participantes, num_questoes_ativas,
-                                 fase, entradas_abertas, segundos_relampago, segundos_trava, passo_debrief)
-        SELECT id, criada_em, previsao_participantes, num_questoes_ativas,
-               fase, entradas_abertas, segundos_relampago, segundos_trava, passo_debrief FROM rodada`)
+      // Copia toda coluna que exista dos dois lados. Uma lista fixa aqui perde
+      // silenciosamente o que for acrescentado depois — título, atalho, no ar.
+      const antigas = db.prepare("PRAGMA table_info('rodada')").all().map(c => c.name)
+      const novas = db.prepare("PRAGMA table_info('rodada_nova')").all().map(c => c.name)
+      const comuns = antigas.filter(c => novas.includes(c)).join(', ')
+      db.exec(`INSERT INTO rodada_nova (${comuns}) SELECT ${comuns} FROM rodada`)
       db.exec('DROP TABLE rodada')
       db.exec('ALTER TABLE rodada_nova RENAME TO rodada')
     })()

@@ -38,6 +38,7 @@ const enviarJson = (url, corpo) => fetch(url, {
 // A tela de quando não há quiz no ar. Nem o resultado de uma sessão passada
 // aparece: o participante encontra a porta fechada, não a sala vazia.
 function desenharSemQuiz () {
+  estado.desenhada = null
   estado.noAr = false
   cabecaTitulo.textContent = 'RTQuiz'
   marcador.textContent = ''
@@ -137,6 +138,8 @@ async function responder (questao, escolha) {
 // A trava é do servidor; aqui ela só é visível. Sem o aviso, os botões mortos
 // pareceriam travamento do sistema em vez de regra da dinâmica.
 function armarTrava () {
+  const faixaAviso = document.getElementById('aviso')
+  if (!faixaAviso) return   // sem o aviso na tela não há o que contar
   const total = estado.segundosTrava * 1000
   const inicio = Date.now()
   const faixa = document.getElementById('aviso')
@@ -159,6 +162,7 @@ function armarTrava () {
 function iniciarCronometro (questao) {
   const conta = document.getElementById('conta')
   const faixa = document.getElementById('faixaTempo')
+  if (!conta || !faixa) return   // a tela mudou antes de a chamada terminar
   const fim = Date.now() + estado.segundosRelampago * 1000
   const passo = () => {
     const falta = Math.max(0, Math.ceil((fim - Date.now()) / 1000))
@@ -172,16 +176,22 @@ function iniciarCronometro (questao) {
 }
 
 function desenharQuestao (questao) {
+  estado.desenhada = questao.id
   const numero = estado.questoes.filter(q => !q.eRelampago).findIndex(q => q.id === questao.id) + 1
   marcador.textContent = questao.eRelampago ? 'Relâmpago' : `Situação ${numero} de 4`
-  const travado = !questao.eRelampago && estado.segundosTrava > 0
+  // Duas coisas diferentes: a trava de armação, com aviso e contagem, só existe
+  // nas situações normais; no relâmpago os botões apenas nascem desabilitados
+  // enquanto a chamada cobre a tela, sem faixa nenhuma.
+  const comTrava = !questao.eRelampago && estado.segundosTrava > 0
+  const sobAChamada = questao.eRelampago && estado.animacaoRelampago !== 'nenhuma'
+  const desabilitado = comTrava || sobAChamada
   const comTempo = questao.eRelampago && questao.comCronometro
 
   const opcoes = questao.eRelampago
-    ? botao('confio', CHECK, '#29235c', 'Confio', 'uso do jeito que veio', false) +
-      botao('confiro', ELO, '#29235c', 'Confiro', 'abro o link antes', false)
-    : botao('busca', LUPA, '#ff8000', 'Busca', 'vá à fonte', travado) +
-      botao('redacao', CANETA, '#169194', 'Redação', 'a IA resolve', travado)
+    ? botao('confio', CHECK, '#29235c', 'Confio', 'uso do jeito que veio', desabilitado) +
+      botao('confiro', ELO, '#29235c', 'Confiro', 'abro o link antes', desabilitado)
+    : botao('busca', LUPA, '#ff8000', 'Busca', 'vá à fonte', desabilitado) +
+      botao('redacao', CANETA, '#169194', 'Redação', 'a IA resolve', desabilitado)
 
   tela.innerHTML = `
     ${comTempo ? '<div class="campo branco" id="faixaTempo" style="flex-direction:row; align-items:baseline; justify-content:space-between; padding-top:14px; padding-bottom:14px"><span class="etiq">tempo</span><span class="num num-l" id="conta"></span></div>' : ''}
@@ -189,7 +199,7 @@ function desenharQuestao (questao) {
       <p class="enunciado">${escapar(questao.texto)}</p>
     </div>
     <div class="acoes">
-      ${travado ? '<div class="aviso"><span class="etiq" id="aviso"></span><div class="trilha"><i id="linha" style="width:0"></i></div></div>' : ''}
+      ${comTrava ? '<div class="aviso"><span class="etiq" id="aviso"></span><div class="trilha"><i id="linha" style="width:0"></i></div></div>' : ''}
       <div class="opcoes">${opcoes}</div>
     </div>`
 
@@ -197,23 +207,36 @@ function desenharQuestao (questao) {
     b.addEventListener('click', () => responder(questao, b.dataset.escolha))
   }
 
+  // Cada desenho ganha um número: uma chamada que termine depois de a tela ter
+  // mudado precisa saber que já não é a dela.
+  estado.geracao = (estado.geracao ?? 0) + 1
+  const minhaGeracao = estado.geracao
+
   const entregar = () => {
+    if (estado.geracao !== minhaGeracao) return
     // Carimba a entrega de TODA questão: é o que arma a trava no servidor,
     // e no relâmpago é o que inicia o cronômetro.
     enviarJson('/api/entregar', { questaoId: questao.id })
       .then(r => { if (SESSAO_PERDIDA.includes(r.status)) reentrar() })
       .catch(() => { /* rede caiu; o participante tenta de novo ao responder */ })
     estado.mostradaEm = Date.now()
-    if (travado) armarTrava()
+    if (comTrava) armarTrava()
     if (comTempo) iniciarCronometro(questao)
   }
 
-  // No relâmpago a chamada vem primeiro; o cronômetro só começa depois dela.
-  if (questao.eRelampago) tocarChamada().then(entregar)
-  else entregar()
+  // No relâmpago a chamada vem primeiro; o cronômetro só começa depois dela,
+  // e os botões só liberam então.
+  if (questao.eRelampago) {
+    tocarChamada().then(() => {
+      if (estado.geracao !== minhaGeracao) return
+      for (const b of tela.querySelectorAll('button.opcao')) b.disabled = false
+      entregar()
+    })
+  } else entregar()
 }
 
 function desenharResultado () {
+  estado.desenhada = null
   marcador.textContent = 'Resultado'
   const r = estado.resultado
   tela.innerHTML = `
@@ -246,10 +269,19 @@ function desenharResultado () {
 }
 
 async function desenhar () {
-  pararTemporizadores()
-  if (!estado.noAr) { desenharSemQuiz(); return }
+  if (!estado.noAr) { pararTemporizadores(); desenharSemQuiz(); return }
   cabecaTitulo.textContent = estado.titulo || 'RTQuiz'
   marcador.textContent = estado.rotulo
+  estado.desenhada = null
+
+  // Redesenhar a questão que já está na tela replicaria a chamada e reiniciaria
+  // o cronômetro, enquanto o servidor continua contando do primeiro entregue_em.
+  const jaNaTela = pendente()
+  if (jaNaTela && estado.desenhada === jaNaTela.id &&
+      (estado.fase === 'respondendo' || estado.fase === 'revelado') && !estado.resultadoLiberado) {
+    return
+  }
+  pararTemporizadores()
 
   if (estado.fase === 'espera') {
     // A espera é o único momento em que dá para explicar as regras sem

@@ -229,7 +229,9 @@ dialog#modal .modal-acoes .acao { font-size: 14px; padding: 13px 18px; }
 /* Chamada do relâmpago: cobre a tela por um instante antes da pergunta.
    Ligada, desligada ou trocada no painel. */
 .chamada {
-  position: fixed; inset: 0; z-index: 90; pointer-events: none;
+  /* Bloqueia cliques: os botões do relâmpago já estão vivos por baixo, e um
+     toque repetido logo após a quarta resposta responderia sem a pessoa ver. */
+  position: fixed; inset: 0; z-index: 90;
   display: flex; align-items: center; justify-content: center;
   background: var(--navy-escuro);
   animation: chamada-sai .5s ease-in 700ms forwards;

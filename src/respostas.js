@@ -44,13 +44,15 @@ export function registrarResposta (db, {
   const permitidas = contexto.e_relampago ? ESCOLHAS_RELAMPAGO : ESCOLHAS_NORMAIS
   if (!permitidas.includes(escolha)) return { registrado: false, motivo: 'escolha_invalida' }
 
-  // Trava de armação: resposta cedo demais é reflexo, não decisão. Nada é
-  // gravado — a pessoa continua na mesma questão e responde quando soltar.
-  // Questão nunca exibida (sem entregue_em) também é cedo demais: fecha a
-  // brecha de quem pula o /api/entregar. O relâmpago é isento: a tela de
-  // preparação já fez esse papel.
+  // Questão que nunca foi exibida não aceita resposta: sem `entregue_em` não há
+  // como medir nem a trava nem o cronômetro, e quem pulasse o /api/entregar
+  // responderia fora de qualquer regra de tempo. Vale para todas, inclusive a
+  // relâmpago — nela é o carimbo que define o início dos 10 segundos.
+  if (!contexto.entregue_em) return { registrado: false, motivo: 'cedo_demais' }
+
+  // A trava de armação é só das situações normais: resposta cedo demais é
+  // reflexo, não decisão. No relâmpago quem cuida do tempo é o cronômetro.
   if (!contexto.e_relampago) {
-    if (!contexto.entregue_em) return { registrado: false, motivo: 'cedo_demais' }
     const desdeQueApareceu = agora.getTime() - new Date(contexto.entregue_em).getTime()
     if (desdeQueApareceu < contexto.segundos_trava * 1000) {
       return { registrado: false, motivo: 'cedo_demais' }
@@ -59,7 +61,7 @@ export function registrarResposta (db, {
 
   let escolhaGravada = escolha
   const sobPressao = contexto.e_relampago && contexto.grupo_relampago === 'cronometro'
-  if (sobPressao && contexto.entregue_em) {
+  if (sobPressao) {
     const limite = contexto.segundos_relampago * 1000 + FOLGA_DE_REDE_MS
     if (agora.getTime() - new Date(contexto.entregue_em).getTime() > limite) {
       escolhaGravada = 'expirou'
