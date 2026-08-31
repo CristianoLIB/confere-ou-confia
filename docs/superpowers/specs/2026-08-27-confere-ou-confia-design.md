@@ -76,20 +76,20 @@ Restrições do contexto:
 6. Uma **chamada** cobre a tela por um instante anunciando *"Pergunta
    Relâmpago!"* — um raio com clarão, só o clarão, ou nada, à escolha do painel. Ela toca **antes** de
    a pergunta ser entregue: o cronômetro começa cheio, depois que ela sai.
-7. **Todos** recebem então a **pergunta relâmpago** — a mesma pergunta para o
+6. **Todos** recebem a **pergunta relâmpago** — a mesma pergunta para o
    público inteiro. Só muda uma coisa: metade vê um cronômetro de 10s correndo,
    a outra metade não vê cronômetro nenhum. Ela usa outro eixo, o que dá nome à
    dinâmica: **Confio** / **Confiro**. Aqui **não há trava**: a tela de
    preparação já cumpriu esse papel, e comer 4 dos 10 segundos mataria a
    pergunta.
-8. Ao terminar: *"Respostas registradas. Ninguém sabe o resultado ainda. Nem
+7. Ao terminar: *"Respostas registradas. Ninguém sabe o resultado ainda. Nem
    você."*
-9. Quando você revela, a tela dela **não** mostra o placar: mostra *"o
+8. Quando você revela, a tela dela **não** mostra o placar: mostra *"o
    resultado da sala está saindo, o seu aparece aqui daqui a pouco"*. O placar
    pessoal só acende quando você chega ao **fechamento** do debrief. Revelar
    tudo de uma vez faria 50 pessoas olharem para o próprio celular no momento
    em que você começa a falar.
-10. Quando você encerra para todos, a tela vira "Dinâmica encerrada".
+9. Quando você encerra para todos, o placar pessoal abre na tela dela.
 
 No celular a tela **cabe na janela sem rolar**: a altura é a visível de
 verdade (`100dvh`, não `100vh`, que conta a área atrás da barra de endereço),
@@ -129,8 +129,8 @@ URL protegida por chave. Ações:
   quiz e do telão, e identifica a sessão no histórico. Até 60 caracteres para
   não quebrar o cabeçalho do telão; vazio mantém o anterior.
 - **Ajustar o ritmo com a rodada em andamento**, sem recriar nada: quanto tempo
-  os botões ficam travados, quantos segundos dura o aviso antes do relâmpago,
-  o cronômetro do relâmpago, e qual chamada anuncia a pergunta. Vale já na
+  os botões ficam travados, o cronômetro do relâmpago, e qual chamada anuncia a
+  pergunta. Vale já na
   próxima questão de quem está respondendo. O servidor limita os valores.
 - Abrir/fechar entradas.
 - Liberar o início (`espera` → `respondendo`).
@@ -294,7 +294,7 @@ rodada
   fase TEXT CHECK (fase IN ('espera','respondendo','revelado','encerrado')),
   entradas_abertas INTEGER, segundos_relampago INTEGER, segundos_trava INTEGER,
               titulo TEXT, atalho TEXT, no_ar INTEGER,
-              segundos_preparacao INTEGER, animacao_relampago TEXT,
+              animacao_relampago TEXT,
               passo_debrief INTEGER
 
 questao
@@ -445,14 +445,14 @@ responder são coisas diferentes, e a tela diz qual foi.
 
 ### 6.7 Ritmo e chamada
 
-Quatro ajustes vivem na rodada e podem mudar durante ela: `segundos_trava`
-(0-15), `segundos_preparacao` (0-30), `segundos_relampago` (3-120) e
-`animacao_relampago` (`raio`, `flash`, `nenhuma`). Os limites são aplicados no
-servidor, valendo para qualquer caminho — criar rodada ou ajustar ao vivo.
+Três ajustes vivem na rodada e podem mudar durante ela: `segundos_trava`
+(0-15), `segundos_relampago` (3-120) e `animacao_relampago` (`raio`, `flash`,
+`nenhuma`). Os limites são aplicados no servidor, valendo para qualquer caminho
+— criar rodada ou ajustar ao vivo.
 
-Preparação de zero segundos pula a tela e vai direto para a chamada. Animação
-`nenhuma` entra direto na pergunta. A chamada respeita `prefers-reduced-motion`:
-quem pediu menos movimento vê o aviso estático, não a animação.
+Animação `nenhuma` entra direto na pergunta. A chamada respeita
+`prefers-reduced-motion`: quem pediu menos movimento vê o aviso estático, não a
+animação.
 
 ### 6.8 Trava de armação
 
