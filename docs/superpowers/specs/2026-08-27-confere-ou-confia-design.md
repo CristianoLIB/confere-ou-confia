@@ -68,14 +68,17 @@ Restrições do contexto:
 4. **A cada situação nova os botões nascem travados por 4 segundos.** Uma faixa
    avisa — *"leia a situação · os botões liberam em 3s"* — com uma linha que
    preenche. Enquanto travados, os botões perdem o relevo e ficam apagados.
-5. **Nenhum feedback durante o quiz.** Ao terminar as quatro, uma **tela de
-   preparação**: *"Mais uma, e acabou"*, com uma contagem que **avança sozinha**
-   (5s por padrão). Depender do clique fazia cada um chegar ao relâmpago num
-   momento diferente. Quem está no grupo do cronômetro lê ali que a próxima tem
-   10 segundos; para o outro grupo a tela não menciona tempo nenhum.
-6. Uma **chamada** cobre a tela por um instante anunciando *"Pergunta
-   Relâmpago!"* — um raio com clarão, só o clarão, ou nada, à escolha do painel. Ela toca **antes** de
-   a pergunta ser entregue: o cronômetro começa cheio, depois que ela sai.
+5. **Nenhum feedback durante o quiz.** A quarta resposta leva **direto** à
+   **chamada**: uma tela que cobre tudo por um instante anunciando *"Pergunta
+   Relâmpago!"* — um raio com clarão, só o clarão, ou nada, à escolha do painel.
+   Não há aviso antes. Ela toca **antes** de a pergunta ser entregue, então o
+   cronômetro começa cheio, depois que ela sai.
+
+   Existiu ali uma tela de preparação avisando *"mais uma, e acabou"* e, para o
+   grupo do cronômetro, que a próxima teria 10 segundos. Ela saiu: além de
+   estragar a surpresa, criava **duas** variáveis entre os grupos — o aviso e o
+   relógio. Sem ela, a única diferença é o cronômetro na tela, que é o que o
+   A/B quer medir.
 6. **Todos** recebem a **pergunta relâmpago** — a mesma pergunta para o
    público inteiro. Só muda uma coisa: metade vê um cronômetro de 10s correndo,
    a outra metade não vê cronômetro nenhum. Ela usa outro eixo, o que dá nome à
